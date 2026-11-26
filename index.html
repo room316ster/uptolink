@@ -1,1141 +1,1229 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitHub File Share — อัปโหลดและแชร์ไฟล์</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --card-2: #0b1220;
-      --border: #334155;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --radius: 14px;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub File Share — อัปโหลดและแชร์ไฟล์</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-2: #0b1220;
+            --border: #334155;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius: 14px;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Sarabun", Roboto, sans-serif;
-      background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 55%);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 24px 16px 48px;
-      line-height: 1.5;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Sarabun", Roboto, sans-serif;
+            background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 55%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 48px;
+            line-height: 1.5;
+        }
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-    }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
 
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
 
-    header h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    header p {
-      color: var(--muted);
-      font-size: 0.95rem;
-      margin-top: 6px;
-    }
+        header p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
 
-    .card {
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 18px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    }
+        .card {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 18px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
 
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
 
-    .card-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .badge {
-      font-size: 0.78rem;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-weight: 600;
-    }
+        .badge {
+            font-size: 0.78rem;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
 
-    .badge-ok { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
-    .badge-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+        .badge-ok {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+        .badge-warn {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
 
-    @media (max-width: 600px) {
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
 
-    .field { margin-bottom: 12px; }
-    .field label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
 
-    .field input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--card-2);
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
+        .field {
+            margin-bottom: 12px;
+        }
 
-    .field input:focus { border-color: var(--primary); }
+        .field label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
 
-    .hint {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
+        .field input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card-2);
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
 
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 8px;
-    }
+        .field input:focus {
+            border-color: var(--primary);
+        }
 
-    button, .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 10px 16px;
-      border-radius: 10px;
-      border: 1px solid transparent;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
-      color: var(--text);
-      background: var(--primary);
-    }
+        .hint {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
 
-    button:hover, .btn:hover { background: var(--primary-hover); }
-    button:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
 
-    .btn-secondary {
-      background: transparent;
-      border-color: var(--border);
-      color: var(--text);
-    }
-    .btn-secondary:hover { background: rgba(148, 163, 184, 0.12); }
+        button,
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+            color: var(--text);
+            background: var(--primary);
+        }
 
-    .btn-success { background: var(--success); color: #052e16; }
-    .btn-success:hover { background: #059669; color: #fff; }
+        button:hover,
+        .btn:hover {
+            background: var(--primary-hover);
+        }
 
-    .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.35);
-      color: #fca5a5;
-    }
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
 
-    .btn-sm { padding: 6px 11px; font-size: 0.82rem; border-radius: 8px; }
+        .btn-secondary {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text);
+        }
 
-    .dropzone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 36px 20px;
-      text-align: center;
-      cursor: pointer;
-      background: rgba(11, 18, 32, 0.55);
-      transition: border-color 0.2s, background 0.2s;
-    }
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.12);
+        }
 
-    .dropzone:hover, .dropzone.dragover {
-      border-color: var(--primary);
-      background: rgba(99, 102, 241, 0.08);
-    }
+        .btn-success {
+            background: var(--success);
+            color: #052e16;
+        }
 
-    .dropzone-icon {
-      font-size: 2.4rem;
-      margin-bottom: 8px;
-    }
+        .btn-success:hover {
+            background: #059669;
+            color: #fff;
+        }
 
-    .dropzone p { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #fca5a5;
+        }
 
-    .file-queue, .history-list {
-      margin-top: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
 
-    .file-item {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+        .btn-sm {
+            padding: 6px 11px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
 
-    .file-item-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(11, 18, 32, 0.55);
+            transition: border-color 0.2s, background 0.2s;
+        }
 
-    .file-name {
-      font-weight: 600;
-      word-break: break-all;
-      font-size: 0.94rem;
-    }
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
 
-    .file-meta {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
+        .dropzone-icon {
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+        }
 
-    .link-box {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
+        .dropzone p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
 
-    .link-box input {
-      flex: 1;
-      min-width: 0;
-      padding: 7px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: #cbd5e1;
-      font-size: 0.82rem;
-    }
+        .file-queue,
+        .history-list {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-    .alert {
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      margin-top: 12px;
-      display: none;
-    }
-    .alert.show { display: block; }
-    .alert-error { background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); color: #fecaca; }
-    .alert-success { background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.4); color: #a7f3d0; }
-    .alert-info { background: rgba(99, 102, 241, 0.14); border: 1px solid rgba(99, 102, 241, 0.4); color: #c7d2fe; }
+        .file-item {
+            background: var(--card-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-    .progress-wrap {
-      width: 100%;
-      height: 8px;
-      background: var(--card-2);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 12px;
-      display: none;
-    }
-    .progress-wrap.show { display: block; }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--primary), #38bdf8);
-      transition: width 0.2s;
-    }
+        .file-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
 
-    .hidden { display: none !important; }
+        .file-name {
+            font-weight: 600;
+            word-break: break-all;
+            font-size: 0.94rem;
+        }
 
-    /* Download Mode */
-    .download-card {
-      text-align: center;
-      padding: 32px 22px;
-    }
+        .file-meta {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
 
-    .download-icon {
-      width: 68px;
-      height: 68px;
-      margin: 0 auto 14px;
-      border-radius: 18px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-    }
+        .link-box {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
 
-    .download-filename {
-      font-size: 1.25rem;
-      font-weight: 700;
-      word-break: break-all;
-      margin-bottom: 6px;
-    }
+        .link-box input {
+            flex: 1;
+            min-width: 0;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: #cbd5e1;
+            font-size: 0.82rem;
+        }
 
-    .preview-img {
-      max-width: 100%;
-      max-height: 320px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin: 16px auto;
-      display: block;
-      object-fit: contain;
-      background: var(--card-2);
-    }
+        .alert {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            margin-top: 12px;
+            display: none;
+        }
 
-    .download-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
+        .alert.show {
+            display: block;
+        }
 
-    .download-actions .btn-lg {
-      padding: 13px 26px;
-      font-size: 1rem;
-    }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.14);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fecaca;
+        }
 
-    footer {
-      text-align: center;
-      margin-top: 24px;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
+        .alert-success {
+            background: rgba(16, 185, 129, 0.14);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #a7f3d0;
+        }
 
-    footer a { color: #818cf8; text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-  </style>
+        .alert-info {
+            background: rgba(99, 102, 241, 0.14);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #c7d2fe;
+        }
+
+        .progress-wrap {
+            width: 100%;
+            height: 8px;
+            background: var(--card-2);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .progress-wrap.show {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), #38bdf8);
+            transition: width 0.2s;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Download Mode */
+        .download-card {
+            text-align: center;
+            padding: 32px 22px;
+        }
+
+        .download-icon {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 14px;
+            border-radius: 18px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .download-filename {
+            font-size: 1.25rem;
+            font-weight: 700;
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 320px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin: 16px auto;
+            display: block;
+            object-fit: contain;
+            background: var(--card-2);
+        }
+
+        .download-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .download-actions .btn-lg {
+            padding: 13px 26px;
+            font-size: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        footer a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-    <header>
-      <h1>📦 GitHub File Share</h1>
-      <p id="headerSubtitle">อัปโหลดไฟล์ขึ้น GitHub แล้วรับลิงก์แชร์ให้คนอื่นดาวน์โหลดได้ทันที</p>
-    </header>
+    <div class="container">
+        <header>
+            <h1>📦 GitHub File Share</h1>
+            <p id="headerSubtitle">อัปโหลดไฟล์ขึ้น GitHub แล้วรับลิงก์แชร์ให้คนอื่นดาวน์โหลดได้ทันที</p>
+        </header>
 
-    <!-- ==================== DOWNLOAD VIEW ==================== -->
-    <section id="downloadView" class="card download-card hidden">
-      <div class="download-icon" id="dlIcon">📄</div>
-      <div class="download-filename" id="dlFilename">กำลังโหลดข้อมูลไฟล์...</div>
-      <div class="file-meta" id="dlMeta"></div>
-      <img id="dlPreview" class="preview-img hidden" alt="ตัวอย่างรูปภาพ" />
+        <!-- ==================== DOWNLOAD VIEW ==================== -->
+        <section id="downloadView" class="card download-card hidden">
+            <div class="download-icon" id="dlIcon">📄</div>
+            <div class="download-filename" id="dlFilename">กำลังโหลดข้อมูลไฟล์...</div>
+            <div class="file-meta" id="dlMeta"></div>
+            <img id="dlPreview" class="preview-img hidden" alt="ตัวอย่างรูปภาพ" />
 
-      <div class="progress-wrap" id="dlProgressWrap">
-        <div class="progress-bar" id="dlProgressBar"></div>
-      </div>
-      <div id="dlAlert" class="alert"></div>
-
-      <div class="download-actions">
-        <button id="btnDownload" class="btn-success btn-lg">⬇️ ดาวน์โหลดไฟล์</button>
-        <a id="btnDirectRaw" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">🔗 เปิดไฟล์โดยตรง</a>
-        <button id="btnCopyPageLink" class="btn-secondary">📋 คัดลอกลิงก์</button>
-      </div>
-
-      <div style="margin-top: 24px;">
-        <a id="backToUpload" href="./" style="color: var(--muted); font-size: 0.88rem;">← กลับไปหน้าอัปโหลดไฟล์</a>
-      </div>
-    </section>
-
-    <!-- ==================== UPLOAD VIEW ==================== -->
-    <main id="uploadView" class="hidden">
-      <!-- GitHub Config Card -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">
-            ⚙️ ตั้งค่า GitHub Repository
-            <span id="configBadge" class="badge badge-warn">ยังไม่ตั้งค่า</span>
-          </div>
-          <button id="btnToggleConfig" class="btn-secondary btn-sm">ซ่อน/แสดง</button>
-        </div>
-
-        <div id="configSummary" class="file-meta hidden"></div>
-
-        <div id="configForm">
-          <div class="grid-2">
-            <div class="field">
-              <label for="cfgOwner">GitHub Username (เจ้าของ Repo)</label>
-              <input id="cfgOwner" type="text" placeholder="เช่น your-username" autocomplete="off" />
+            <div class="progress-wrap" id="dlProgressWrap">
+                <div class="progress-bar" id="dlProgressBar"></div>
             </div>
-            <div class="field">
-              <label for="cfgRepo">ชื่อ Repository (ต้องเป็น Public)</label>
-              <input id="cfgRepo" type="text" placeholder="เช่น my-file-share" autocomplete="off" />
+            <div id="dlAlert" class="alert"></div>
+
+            <div class="download-actions">
+                <button id="btnDownload" class="btn-success btn-lg">⬇️ ดาวน์โหลดไฟล์</button>
+                <a id="btnDirectRaw" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">🔗
+                    เปิดไฟล์โดยตรง</a>
+                <button id="btnCopyPageLink" class="btn-secondary">📋 คัดลอกลิงก์</button>
             </div>
-          </div>
 
-          <div class="grid-2">
-            <div class="field">
-              <label for="cfgBranch">Branch</label>
-              <input id="cfgBranch" type="text" value="main" placeholder="main" autocomplete="off" />
+            <div style="margin-top: 24px;">
+                <a id="backToUpload" href="./" style="color: var(--muted); font-size: 0.88rem;">←
+                    กลับไปหน้าอัปโหลดไฟล์</a>
             </div>
-            <div class="field">
-              <label for="cfgFolder">โฟลเดอร์เก็บไฟล์ใน Repo</label>
-              <input id="cfgFolder" type="text" value="uploads" placeholder="uploads" autocomplete="off" />
-            </div>
-          </div>
+        </section>
 
-          <div class="field">
-            <label for="cfgToken">GitHub Personal Access Token (Fine-grained PAT)</label>
-            <input id="cfgToken" type="password" placeholder="github_pat_..." autocomplete="off" />
-            <div class="hint">
-              🔒 Token จะถูกบันทึกไว้เฉพาะในเบราว์เซอร์เครื่องนี้เท่านั้น (ห้ามใส่ Token ลงในโค้ด) · ต้องเปิดสิทธิ์ <code>Contents: Read and write</code>
-            </div>
-          </div>
+        <!-- ==================== UPLOAD VIEW ==================== -->
+        <main id="uploadView" class="hidden">
+            <!-- GitHub Config Card -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        ⚙️ ตั้งค่า GitHub Repository
+                        <span id="configBadge" class="badge badge-warn">ยังไม่ตั้งค่า</span>
+                    </div>
+                    <button id="btnToggleConfig" class="btn-secondary btn-sm">ซ่อน/แสดง</button>
+                </div>
 
-          <div class="btn-row">
-            <button id="btnSaveConfig">💾 บันทึกการตั้งค่า</button>
-            <button id="btnTestConfig" class="btn-secondary">🔌 ทดสอบการเชื่อมต่อ</button>
-            <button id="btnClearConfig" class="btn-danger">ล้างค่า</button>
-          </div>
-          <div id="configAlert" class="alert"></div>
-        </div>
-      </section>
+                <div id="configSummary" class="file-meta hidden"></div>
 
-      <!-- Upload Card -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">☁️ อัปโหลดไฟล์</div>
-          <span class="file-meta">สูงสุด 25 MB / ไฟล์</span>
-        </div>
+                <div id="configForm">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="cfgOwner">GitHub Username (เจ้าของ Repo)</label>
+                            <input id="cfgOwner" type="text" placeholder="เช่น your-username" autocomplete="off" />
+                        </div>
+                        <div class="field">
+                            <label for="cfgRepo">ชื่อ Repository (ต้องเป็น Public)</label>
+                            <input id="cfgRepo" type="text" placeholder="เช่น my-file-share" autocomplete="off" />
+                        </div>
+                    </div>
 
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="เลือกไฟล์เพื่ออัปโหลด">
-          <div class="dropzone-icon">📁</div>
-          <strong>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</strong>
-          <p>รองรับหลายไฟล์พร้อมกัน (รูปภาพ, PDF, ZIP, เอกสาร ฯลฯ)</p>
-          <input id="fileInput" type="file" multiple class="hidden" />
-        </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="cfgBranch">Branch</label>
+                            <input id="cfgBranch" type="text" value="main" placeholder="main" autocomplete="off" />
+                        </div>
+                        <div class="field">
+                            <label for="cfgFolder">โฟลเดอร์เก็บไฟล์ใน Repo</label>
+                            <input id="cfgFolder" type="text" value="uploads" placeholder="uploads"
+                                autocomplete="off" />
+                        </div>
+                    </div>
 
-        <div id="queueList" class="file-queue"></div>
+                    <div class="field">
+                        <label for="cfgToken">GitHub Personal Access Token (Fine-grained PAT)</label>
+                        <input id="cfgToken" type="password" placeholder="github_pat_..." autocomplete="off" />
+                        <div class="hint">
+                            🔒 Token จะถูกบันทึกไว้เฉพาะในเบราว์เซอร์เครื่องนี้เท่านั้น (ห้ามใส่ Token ลงในโค้ด) ·
+                            ต้องเปิดสิทธิ์ <code>Contents: Read and write</code>
+                        </div>
+                    </div>
 
-        <div class="btn-row hidden" id="uploadActions">
-          <button id="btnStartUpload">🚀 อัปโหลดและสร้างลิงก์</button>
-          <button id="btnClearQueue" class="btn-secondary">ล้างรายการ</button>
-        </div>
+                    <div class="btn-row">
+                        <button id="btnSaveConfig">💾 บันทึกการตั้งค่า</button>
+                        <button id="btnTestConfig" class="btn-secondary">🔌 ทดสอบการเชื่อมต่อ</button>
+                        <button id="btnClearConfig" class="btn-danger">ล้างค่า</button>
+                    </div>
+                    <div id="configAlert" class="alert"></div>
+                </div>
+            </section>
 
-        <div class="progress-wrap" id="uploadProgressWrap">
-          <div class="progress-bar" id="uploadProgressBar"></div>
-        </div>
-        <div id="uploadAlert" class="alert"></div>
-      </section>
+            <!-- Upload Card -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">☁️ อัปโหลดไฟล์</div>
+                    <span class="file-meta">สูงสุด 25 MB / ไฟล์</span>
+                </div>
 
-      <!-- Latest Uploaded / History Card -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">🔗 ลิงก์ไฟล์ที่อัปโหลดแล้ว</div>
-          <button id="btnClearHistory" class="btn-secondary btn-sm">ล้างประวัติในเครื่อง</button>
-        </div>
-        <div id="historyEmpty" class="file-meta">ยังไม่มีไฟล์ที่อัปโหลด</div>
-        <div id="historyList" class="history-list"></div>
-      </section>
-    </main>
+                <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="เลือกไฟล์เพื่ออัปโหลด">
+                    <div class="dropzone-icon">📁</div>
+                    <strong>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</strong>
+                    <p>รองรับหลายไฟล์พร้อมกัน (รูปภาพ, PDF, ZIP, เอกสาร ฯลฯ)</p>
+                    <input id="fileInput" type="file" multiple class="hidden" />
+                </div>
 
-    <footer>
-      โฮสต์ฟรีด้วย GitHub Pages · ข้อมูลไฟล์ถูกเก็บใน Public Repository ของคุณ
-    </footer>
-  </div>
+                <div id="queueList" class="file-queue"></div>
 
-  <script>
-    (() => {
-      const STORAGE_CFG_KEY = 'gh_fileshare_config_v1';
-      const STORAGE_HIST_KEY = 'gh_fileshare_history_v1';
-      const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+                <div class="btn-row hidden" id="uploadActions">
+                    <button id="btnStartUpload">🚀 อัปโหลดและสร้างลิงก์</button>
+                    <button id="btnClearQueue" class="btn-secondary">ล้างรายการ</button>
+                </div>
 
-      const $ = (id) => document.getElementById(id);
+                <div class="progress-wrap" id="uploadProgressWrap">
+                    <div class="progress-bar" id="uploadProgressBar"></div>
+                </div>
+                <div id="uploadAlert" class="alert"></div>
+            </section>
 
-      // -------------------- Helpers --------------------
-      function formatBytes(bytes) {
-        if (!Number.isFinite(bytes) || bytes < 0) return '';
-        if (bytes === 0) return '0 B';
-        const units = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-        return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
-      }
+            <!-- Latest Uploaded / History Card -->
+            <section class="card">
+                <div class="card-header">
+                    <div class="card-title">🔗 ลิงก์ไฟล์ที่อัปโหลดแล้ว</div>
+                    <button id="btnClearHistory" class="btn-secondary btn-sm">ล้างประวัติในเครื่อง</button>
+                </div>
+                <div id="historyEmpty" class="file-meta">ยังไม่มีไฟล์ที่อัปโหลด</div>
+                <div id="historyList" class="history-list"></div>
+            </section>
+        </main>
 
-      function encodePath(path) {
-        return path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
-      }
+        <footer>
+            โฮสต์ฟรีด้วย GitHub Pages · ข้อมูลไฟล์ถูกเก็บใน Public Repository ของคุณ
+        </footer>
+    </div>
 
-      function sanitizeFileName(name) {
-        return (name || 'file')
-          .replace(/[\/\\:*?"<>|#%]/g, '_')
-          .replace(/\s+/g, ' ')
-          .trim() || 'file';
-      }
+    <script>
+        (() => {
+            const STORAGE_CFG_KEY = 'gh_fileshare_config_v1';
+            const STORAGE_HIST_KEY = 'gh_fileshare_history_v1';
+            const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
-      function isSafeIdent(s) {
-        return /^[a-zA-Z0-9._-]+$/.test(s || '');
-      }
+            const $ = (id) => document.getElementById(id);
 
-      function isSafeBranch(s) {
-        return /^[a-zA-Z0-9._\/-]+$/.test(s || '') && !s.includes('..');
-      }
-
-      function isSafePath(p) {
-        return Boolean(p) && !p.startsWith('/') && !p.includes('..') && !p.includes('\\');
-      }
-
-      function getFileIcon(filename) {
-        const ext = (filename.split('.').pop() || '').toLowerCase();
-        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return '🖼️';
-        if (['pdf'].includes(ext)) return '📕';
-        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '🗜️';
-        if (['mp4', 'mov', 'webm', 'mkv', 'avi'].includes(ext)) return '🎬';
-        if (['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(ext)) return '🎵';
-        if (['doc', 'docx', 'txt', 'md', 'rtf'].includes(ext)) return '📝';
-        if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
-        if (['ppt', 'pptx'].includes(ext)) return '📽️';
-        return '📄';
-      }
-
-      function isImageFile(filename) {
-        const ext = (filename.split('.').pop() || '').toLowerCase();
-        return ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext);
-      }
-
-      function showAlert(el, msg, type = 'info') {
-        el.textContent = msg;
-        el.className = `alert show alert-${type}`;
-      }
-
-      function hideAlert(el) {
-        el.className = 'alert';
-        el.textContent = '';
-      }
-
-      async function copyText(text, btn) {
-        try {
-          await navigator.clipboard.writeText(text);
-        } catch {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-        }
-        if (btn) {
-          const old = btn.textContent;
-          btn.textContent = '✅ คัดลอกแล้ว';
-          setTimeout(() => (btn.textContent = old), 1600);
-        }
-      }
-
-      function detectGithubPagesRepo() {
-        const host = window.location.hostname;
-        if (host.endsWith('.github.io')) {
-          const owner = host.slice(0, -'.github.io'.length);
-          const segs = window.location.pathname.split('/').filter(Boolean);
-          const repo = segs[0] || host;
-          return { owner, repo };
-        }
-        return { owner: '', repo: '' };
-      }
-
-      function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const res = String(reader.result || '');
-            const idx = res.indexOf(',');
-            resolve(idx >= 0 ? res.slice(idx + 1) : '');
-          };
-          reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
-          reader.readAsDataURL(file);
-        });
-      }
-
-      function buildRawUrl(owner, repo, branch, path) {
-        return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${encodePath(path)}`;
-      }
-
-      function buildShareUrl(owner, repo, branch, path, size) {
-        const base = window.location.origin === 'null'
-          ? `https://${owner}.github.io/${repo === `${owner}.github.io` ? '' : repo + '/'}`
-          : window.location.origin + window.location.pathname;
-        const params = new URLSearchParams({ f: path, o: owner, r: repo, b: branch });
-        if (Number.isFinite(size)) params.set('s', String(size));
-        return `${base}?${params.toString()}`;
-      }
-
-      // -------------------- Route Check --------------------
-      const params = new URLSearchParams(window.location.search);
-      const sharedFile = params.get('f');
-
-      if (sharedFile) {
-        initDownloadMode(params);
-      } else {
-        initUploadMode();
-      }
-
-      // ==================== DOWNLOAD MODE ====================
-      function initDownloadMode(urlParams) {
-        $('downloadView').classList.remove('hidden');
-        $('headerSubtitle').textContent = 'คุณได้รับลิงก์สำหรับดาวน์โหลดไฟล์';
-
-        const auto = detectGithubPagesRepo();
-        const filePath = urlParams.get('f') || '';
-        const owner = urlParams.get('o') || auto.owner;
-        const repo = urlParams.get('r') || auto.repo;
-        const branch = urlParams.get('b') || 'main';
-        const sizeParam = Number(urlParams.get('s'));
-
-        const dlAlert = $('dlAlert');
-        const btnDownload = $('btnDownload');
-        const btnDirectRaw = $('btnDirectRaw');
-
-        if (!isSafePath(filePath) || !isSafeIdent(owner) || !isSafeIdent(repo) || !isSafeBranch(branch)) {
-          $('dlFilename').textContent = 'ลิงก์ไม่ถูกต้อง';
-          showAlert(dlAlert, 'พารามิเตอร์ของลิงก์ไม่ถูกต้องหรือไม่ครบถ้วน', 'error');
-          btnDownload.disabled = true;
-          btnDirectRaw.classList.add('hidden');
-          return;
-        }
-
-        const filename = filePath.split('/').pop() || 'downloaded-file';
-        const rawUrl = buildRawUrl(owner, repo, branch, filePath);
-
-        $('dlIcon').textContent = getFileIcon(filename);
-        $('dlFilename').textContent = filename;
-        $('dlMeta').textContent = [
-          Number.isFinite(sizeParam) && sizeParam > 0 ? `ขนาด: ${formatBytes(sizeParam)}` : null,
-          `จาก ${owner}/${repo}`
-        ].filter(Boolean).join(' · ');
-
-        btnDirectRaw.href = rawUrl;
-        $('backToUpload').href = window.location.pathname || './';
-
-        if (isImageFile(filename)) {
-          const img = $('dlPreview');
-          img.src = rawUrl;
-          img.onload = () => img.classList.remove('hidden');
-          img.onerror = () => img.classList.add('hidden');
-        }
-
-        $('btnCopyPageLink').addEventListener('click', (e) => {
-          copyText(window.location.href, e.currentTarget);
-        });
-
-        btnDownload.addEventListener('click', async () => {
-          hideAlert(dlAlert);
-          btnDownload.disabled = true;
-          btnDownload.textContent = '⏳ กำลังเตรียมดาวน์โหลด...';
-          const pWrap = $('dlProgressWrap');
-          const pBar = $('dlProgressBar');
-          pWrap.classList.add('show');
-          pBar.style.width = '10%';
-
-          try {
-            const resp = await fetch(rawUrl);
-            if (!resp.ok) {
-              throw new Error(resp.status === 404 ? 'ไม่พบไฟล์นี้ (อาจถูกลบแล้วหรือ Repo เป็น Private)' : `HTTP ${resp.status}`);
+            // -------------------- Helpers --------------------
+            function formatBytes(bytes) {
+                if (!Number.isFinite(bytes) || bytes < 0) return '';
+                if (bytes === 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+                return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2) + ' ' + units[i];
             }
 
-            const total = Number(resp.headers.get('Content-Length')) || sizeParam || 0;
-            let blob;
-
-            if (resp.body && total > 0) {
-              const reader = resp.body.getReader();
-              const chunks = [];
-              let received = 0;
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                received += value.length;
-                pBar.style.width = Math.min(99, Math.round((received / total) * 100)) + '%';
-              }
-              blob = new Blob(chunks);
-            } else {
-              blob = await resp.blob();
+            function encodePath(path) {
+                return path.split('/').filter(Boolean).map(encodeURIComponent).join('/');
             }
 
-            pBar.style.width = '100%';
-            const objUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = objUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
-
-            showAlert(dlAlert, 'เริ่มดาวน์โหลดไฟล์แล้ว!', 'success');
-          } catch (err) {
-            showAlert(dlAlert, `ไม่สามารถดาวน์โหลดอัตโนมัติได้: ${err.message} — ลองกดปุ่ม "เปิดไฟล์โดยตรง" แทน`, 'error');
-          } finally {
-            btnDownload.disabled = false;
-            btnDownload.textContent = '⬇️ ดาวน์โหลดไฟล์';
-            setTimeout(() => pWrap.classList.remove('show'), 1200);
-          }
-        });
-      }
-
-      // ==================== UPLOAD MODE ====================
-      function initUploadMode() {
-        $('uploadView').classList.remove('hidden');
-
-        let queuedFiles = [];
-
-        function loadConfig() {
-          const auto = detectGithubPagesRepo();
-          let saved = {};
-          try { saved = JSON.parse(localStorage.getItem(STORAGE_CFG_KEY) || '{}'); } catch {}
-          return {
-            owner: saved.owner || auto.owner || '',
-            repo: saved.repo || auto.repo || '',
-            branch: saved.branch || 'main',
-            folder: saved.folder || 'uploads',
-            token: saved.token || ''
-          };
-        }
-
-        function saveConfig(cfg) {
-          localStorage.setItem(STORAGE_CFG_KEY, JSON.stringify(cfg));
-        }
-
-        function readConfigFromInputs() {
-          return {
-            owner: $('cfgOwner').value.trim(),
-            repo: $('cfgRepo').value.trim(),
-            branch: $('cfgBranch').value.trim() || 'main',
-            folder: ($('cfgFolder').value.trim() || 'uploads').replace(/^\/+|\/+$/g, ''),
-            token: $('cfgToken').value.trim()
-          };
-        }
-
-        function syncConfigUI(collapseIfReady = false) {
-          const cfg = loadConfig();
-          $('cfgOwner').value = cfg.owner;
-          $('cfgRepo').value = cfg.repo;
-          $('cfgBranch').value = cfg.branch;
-          $('cfgFolder').value = cfg.folder;
-          $('cfgToken').value = cfg.token;
-
-          const ready = Boolean(cfg.owner && cfg.repo && cfg.token);
-          const badge = $('configBadge');
-          const summary = $('configSummary');
-
-          if (ready) {
-            badge.textContent = 'พร้อมใช้งาน';
-            badge.className = 'badge badge-ok';
-            summary.textContent = `ปลายทาง: ${cfg.owner}/${cfg.repo} (branch: ${cfg.branch}, โฟลเดอร์: /${cfg.folder})`;
-            if (collapseIfReady) {
-              $('configForm').classList.add('hidden');
-              summary.classList.remove('hidden');
+            function sanitizeFileName(name) {
+                return (name || 'file')
+                    .replace(/[\/\\:*?"<>|#%]/g, '_')
+                    .replace(/\s+/g, ' ')
+                    .trim() || 'file';
             }
-          } else {
-            badge.textContent = 'ยังไม่ตั้งค่า';
-            badge.className = 'badge badge-warn';
-            $('configForm').classList.remove('hidden');
-            summary.classList.add('hidden');
-          }
-        }
 
-        syncConfigUI(true);
-
-        $('btnToggleConfig').addEventListener('click', () => {
-          const hidden = $('configForm').classList.toggle('hidden');
-          $('configSummary').classList.toggle('hidden', !hidden);
-        });
-
-        $('btnSaveConfig').addEventListener('click', () => {
-          const cfg = readConfigFromInputs();
-          if (!isSafeIdent(cfg.owner) || !isSafeIdent(cfg.repo) || !isSafeBranch(cfg.branch) || !cfg.token) {
-            showAlert($('configAlert'), 'กรุณากรอก Username, ชื่อ Repo, Branch และ Token ให้ถูกต้องครบถ้วน', 'error');
-            return;
-          }
-          saveConfig(cfg);
-          showAlert($('configAlert'), 'บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
-          syncConfigUI(false);
-        });
-
-        $('btnClearConfig').addEventListener('click', () => {
-          localStorage.removeItem(STORAGE_CFG_KEY);
-          syncConfigUI(false);
-          showAlert($('configAlert'), 'ล้างการตั้งค่าและ Token ออกจากเครื่องแล้ว', 'info');
-        });
-
-        $('btnTestConfig').addEventListener('click', async () => {
-          const cfg = readConfigFromInputs();
-          if (!cfg.owner || !cfg.repo || !cfg.token) {
-            showAlert($('configAlert'), 'กรุณากรอก Username, Repo และ Token ก่อนทดสอบ', 'error');
-            return;
-          }
-          showAlert($('configAlert'), 'กำลังทดสอบการเชื่อมต่อกับ GitHub...', 'info');
-          try {
-            const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`, {
-              headers: {
-                Authorization: `Bearer ${cfg.token}`,
-                Accept: 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28'
-              }
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-            if (data.private) {
-              showAlert($('configAlert'), 'เชื่อมต่อสำเร็จ! แต่ Repo นี้เป็น Private — คนอื่นจะดาวน์โหลดไม่ได้จนกว่าจะเปลี่ยนเป็น Public', 'error');
-            } else {
-              saveConfig(cfg);
-              syncConfigUI(false);
-              showAlert($('configAlert'), `เชื่อมต่อสำเร็จกับ ${data.full_name} (Public) พร้อมอัปโหลดไฟล์แล้ว!`, 'success');
+            function isSafeIdent(s) {
+                return /^[a-zA-Z0-9._-]+$/.test(s || '');
             }
-          } catch (err) {
-            showAlert($('configAlert'), `เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
-          }
-        });
 
-        // -------------------- File Selection --------------------
-        const dropzone = $('dropzone');
-        const fileInput = $('fileInput');
-
-        dropzone.addEventListener('click', () => fileInput.click());
-        dropzone.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-        });
-
-        dropzone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dropzone.classList.add('dragover');
-        });
-        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-        dropzone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dropzone.classList.remove('dragover');
-          addFilesToQueue(e.dataTransfer.files);
-        });
-
-        fileInput.addEventListener('change', () => {
-          addFilesToQueue(fileInput.files);
-          fileInput.value = '';
-        });
-
-        function addFilesToQueue(fileList) {
-          hideAlert($('uploadAlert'));
-          const rejected = [];
-          for (const file of fileList) {
-            if (file.size > MAX_FILE_SIZE) {
-              rejected.push(`${file.name} (${formatBytes(file.size)})`);
-            } else {
-              queuedFiles.push(file);
+            function isSafeBranch(s) {
+                return /^[a-zA-Z0-9._\/-]+$/.test(s || '') && !s.includes('..');
             }
-          }
-          if (rejected.length) {
-            showAlert($('uploadAlert'), `ข้ามไฟล์ที่ใหญ่เกิน 25 MB: ${rejected.join(', ')}`, 'error');
-          }
-          renderQueue();
-        }
 
-        function renderQueue() {
-          const list = $('queueList');
-          list.innerHTML = '';
-          $('uploadActions').classList.toggle('hidden', queuedFiles.length === 0);
+            function isSafePath(p) {
+                return Boolean(p) && !p.startsWith('/') && !p.includes('..') && !p.includes('\\');
+            }
 
-          queuedFiles.forEach((file, idx) => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
+            function getFileIcon(filename) {
+                const ext = (filename.split('.').pop() || '').toLowerCase();
+                if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) return '🖼️';
+                if (['pdf'].includes(ext)) return '📕';
+                if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '🗜️';
+                if (['mp4', 'mov', 'webm', 'mkv', 'avi'].includes(ext)) return '🎬';
+                if (['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(ext)) return '🎵';
+                if (['doc', 'docx', 'txt', 'md', 'rtf'].includes(ext)) return '📝';
+                if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+                if (['ppt', 'pptx'].includes(ext)) return '📽️';
+                return '📄';
+            }
 
-            const top = document.createElement('div');
-            top.className = 'file-item-top';
+            function isImageFile(filename) {
+                const ext = (filename.split('.').pop() || '').toLowerCase();
+                return ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext);
+            }
 
-            const left = document.createElement('div');
-            const nameEl = document.createElement('div');
-            nameEl.className = 'file-name';
-            nameEl.textContent = `${getFileIcon(file.name)} ${file.name}`;
-            const metaEl = document.createElement('div');
-            metaEl.className = 'file-meta';
-            metaEl.textContent = formatBytes(file.size);
-            left.append(nameEl, metaEl);
+            function showAlert(el, msg, type = 'info') {
+                el.textContent = msg;
+                el.className = `alert show alert-${type}`;
+            }
 
-            const rmBtn = document.createElement('button');
-            rmBtn.className = 'btn-secondary btn-sm';
-            rmBtn.textContent = 'ลบออก';
-            rmBtn.addEventListener('click', () => {
-              queuedFiles.splice(idx, 1);
-              renderQueue();
-            });
+            function hideAlert(el) {
+                el.className = 'alert';
+                el.textContent = '';
+            }
 
-            top.append(left, rmBtn);
-            item.appendChild(top);
-            list.appendChild(item);
-          });
-        }
-
-        $('btnClearQueue').addEventListener('click', () => {
-          queuedFiles = [];
-          renderQueue();
-          hideAlert($('uploadAlert'));
-        });
-
-        // -------------------- Upload to GitHub --------------------
-        $('btnStartUpload').addEventListener('click', async () => {
-          const cfg = loadConfig();
-          if (!cfg.owner || !cfg.repo || !cfg.token) {
-            showAlert($('uploadAlert'), 'กรุณาตั้งค่า GitHub Repository และบันทึก Token ด้านบนก่อนอัปโหลด', 'error');
-            $('configForm').classList.remove('hidden');
-            return;
-          }
-          if (!queuedFiles.length) return;
-
-          const btnUpload = $('btnStartUpload');
-          const pWrap = $('uploadProgressWrap');
-          const pBar = $('uploadProgressBar');
-
-          btnUpload.disabled = true;
-          $('btnClearQueue').disabled = true;
-          pWrap.classList.add('show');
-          pBar.style.width = '5%';
-
-          const total = queuedFiles.length;
-          let successCount = 0;
-          const errors = [];
-
-          for (let i = 0; i < total; i++) {
-            const file = queuedFiles[i];
-            showAlert($('uploadAlert'), `กำลังอัปโหลด (${i + 1}/${total}): ${file.name}...`, 'info');
-            try {
-              const base64 = await fileToBase64(file);
-              const uid = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-              const safeName = sanitizeFileName(file.name);
-              const filePath = `${cfg.folder}/${uid}/${safeName}`;
-
-              const resp = await fetch(
-                `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${encodePath(filePath)}`,
-                {
-                  method: 'PUT',
-                  headers: {
-                    Authorization: `Bearer ${cfg.token}`,
-                    Accept: 'application/vnd.github+json',
-                    'Content-Type': 'application/json',
-                    'X-GitHub-Api-Version': '2022-11-28'
-                  },
-                  body: JSON.stringify({
-                    message: `Upload ${safeName}`,
-                    content: base64,
-                    branch: cfg.branch
-                  })
+            async function copyText(text, btn) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
                 }
-              );
-
-              const data = await resp.json();
-              if (!resp.ok) {
-                let reason = data.message || `HTTP ${resp.status}`;
-                if (resp.status === 401) reason = 'Token ไม่ถูกต้องหรือหมดอายุ';
-                else if (resp.status === 403) reason = 'Token ไม่มีสิทธิ์เขียนไฟล์ (ต้องเปิด Contents: Read and write)';
-                else if (resp.status === 404) reason = 'ไม่พบ Repository หรือ Branch ที่ระบุ';
-                throw new Error(reason);
-              }
-
-              const entry = {
-                name: safeName,
-                path: filePath,
-                sha: data.content?.sha || '',
-                size: file.size,
-                owner: cfg.owner,
-                repo: cfg.repo,
-                branch: cfg.branch,
-                shareUrl: buildShareUrl(cfg.owner, cfg.repo, cfg.branch, filePath, file.size),
-                rawUrl: buildRawUrl(cfg.owner, cfg.repo, cfg.branch, filePath),
-                uploadedAt: new Date().toLocaleString('th-TH')
-              };
-
-              addHistory(entry);
-              successCount++;
-            } catch (err) {
-              errors.push(`${file.name}: ${err.message}`);
+                if (btn) {
+                    const old = btn.textContent;
+                    btn.textContent = '✅ คัดลอกแล้ว';
+                    setTimeout(() => (btn.textContent = old), 1600);
+                }
             }
 
-            pBar.style.width = Math.round(((i + 1) / total) * 100) + '%';
-          }
-
-          queuedFiles = [];
-          renderQueue();
-          renderHistory();
-
-          btnUpload.disabled = false;
-          $('btnClearQueue').disabled = false;
-          setTimeout(() => pWrap.classList.remove('show'), 1200);
-
-          if (errors.length === 0) {
-            showAlert($('uploadAlert'), `อัปโหลดสำเร็จ ${successCount} ไฟล์! คัดลอกลิงก์ด้านล่างเพื่อแชร์ได้เลย`, 'success');
-          } else {
-            showAlert($('uploadAlert'), `สำเร็จ ${successCount}/${total} ไฟล์ · ผิดพลาด: ${errors.join(' | ')}`, 'error');
-          }
-        });
-
-        // -------------------- History & Delete --------------------
-        function getHistory() {
-          try { return JSON.parse(localStorage.getItem(STORAGE_HIST_KEY) || '[]'); }
-          catch { return []; }
-        }
-
-        function saveHistory(list) {
-          localStorage.setItem(STORAGE_HIST_KEY, JSON.stringify(list.slice(0, 50)));
-        }
-
-        function addHistory(entry) {
-          const list = getHistory();
-          list.unshift(entry);
-          saveHistory(list);
-        }
-
-        async function deleteFromGitHub(entry, index) {
-          if (!confirm(`ต้องการลบไฟล์ "${entry.name}" ออกจาก GitHub Repository จริงหรือไม่?`)) return;
-          const cfg = loadConfig();
-          if (!cfg.token) {
-            showAlert($('uploadAlert'), 'กรุณาใส่ Token ในหน้าตั้งค่าก่อนลบไฟล์บน GitHub', 'error');
-            return;
-          }
-          try {
-            let sha = entry.sha;
-            if (!sha) {
-              const infoRes = await fetch(
-                `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}?ref=${encodeURIComponent(entry.branch)}`,
-                { headers: { Authorization: `Bearer ${cfg.token}`, Accept: 'application/vnd.github+json' } }
-              );
-              if (infoRes.ok) sha = (await infoRes.json()).sha;
+            function detectGithubPagesRepo() {
+                const host = window.location.hostname;
+                if (host.endsWith('.github.io')) {
+                    const owner = host.slice(0, -'.github.io'.length);
+                    const segs = window.location.pathname.split('/').filter(Boolean);
+                    const repo = segs[0] || host;
+                    return { owner, repo };
+                }
+                return { owner: '', repo: '' };
             }
-            const delRes = await fetch(
-              `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}`,
-              {
-                method: 'DELETE',
-                headers: {
-                  Authorization: `Bearer ${cfg.token}`,
-                  Accept: 'application/vnd.github+json',
-                  'Content-Type': 'application/json',
-                  'X-GitHub-Api-Version': '2022-11-28'
-                },
-                body: JSON.stringify({
-                  message: `Delete ${entry.name}`,
-                  sha,
-                  branch: entry.branch
-                })
-              }
-            );
-            if (!delRes.ok && delRes.status !== 404) {
-              const errData = await delRes.json();
-              throw new Error(errData.message || `HTTP ${delRes.status}`);
+
+            function fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const res = String(reader.result || '');
+                        const idx = res.indexOf(',');
+                        resolve(idx >= 0 ? res.slice(idx + 1) : '');
+                    };
+                    reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+                    reader.readAsDataURL(file);
+                });
             }
-            const list = getHistory();
-            list.splice(index, 1);
-            saveHistory(list);
-            renderHistory();
-            showAlert($('uploadAlert'), `ลบไฟล์ "${entry.name}" ออกจาก GitHub เรียบร้อยแล้ว`, 'success');
-          } catch (err) {
-            showAlert($('uploadAlert'), `ลบไฟล์ไม่สำเร็จ: ${err.message}`, 'error');
-          }
-        }
 
-        function renderHistory() {
-          const list = getHistory();
-          const container = $('historyList');
-          container.innerHTML = '';
-          $('historyEmpty').classList.toggle('hidden', list.length > 0);
+            function buildRawUrl(owner, repo, branch, path) {
+                return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${encodePath(path)}`;
+            }
 
-          list.forEach((entry, idx) => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
+            function buildShareUrl(owner, repo, branch, path, size) {
+                const base = window.location.origin === 'null'
+                    ? `https://${owner}.github.io/${repo === `${owner}.github.io` ? '' : repo + '/'}`
+                    : window.location.origin + window.location.pathname;
+                const params = new URLSearchParams({ f: path, o: owner, r: repo, b: branch });
+                if (Number.isFinite(size)) params.set('s', String(size));
+                return `${base}?${params.toString()}`;
+            }
 
-            const top = document.createElement('div');
-            top.className = 'file-item-top';
+            // -------------------- Route Check --------------------
+            const params = new URLSearchParams(window.location.search);
+            const sharedFile = params.get('f');
 
-            const info = document.createElement('div');
-            const nameEl = document.createElement('div');
-            nameEl.className = 'file-name';
-            nameEl.textContent = `${getFileIcon(entry.name)} ${entry.name}`;
-            const metaEl = document.createElement('div');
-            metaEl.className = 'file-meta';
-            metaEl.textContent = `${formatBytes(entry.size)} · ${entry.uploadedAt}`;
-            info.append(nameEl, metaEl);
+            if (sharedFile) {
+                initDownloadMode(params);
+            } else {
+                initUploadMode();
+            }
 
-            const delBtn = document.createElement('button');
-            delBtn.className = 'btn-danger btn-sm';
-            delBtn.textContent = '🗑️ ลบจาก GitHub';
-            delBtn.addEventListener('click', () => deleteFromGitHub(entry, idx));
+            // ==================== DOWNLOAD MODE ====================
+            function initDownloadMode(urlParams) {
+                $('downloadView').classList.remove('hidden');
+                $('headerSubtitle').textContent = 'คุณได้รับลิงก์สำหรับดาวน์โหลดไฟล์';
 
-            top.append(info, delBtn);
+                const auto = detectGithubPagesRepo();
+                const filePath = urlParams.get('f') || '';
+                const owner = urlParams.get('o') || auto.owner;
+                const repo = urlParams.get('r') || auto.repo;
+                const branch = urlParams.get('b') || 'main';
+                const sizeParam = Number(urlParams.get('s'));
 
-            // Share Page Link
-            const shareRow = document.createElement('div');
-            shareRow.className = 'link-box';
-            const shareInput = document.createElement('input');
-            shareInput.type = 'text';
-            shareInput.readOnly = true;
-            shareInput.value = entry.shareUrl;
-            const copyShareBtn = document.createElement('button');
-            copyShareBtn.className = 'btn-sm';
-            copyShareBtn.textContent = '📋 คัดลอกลิงก์แชร์';
-            copyShareBtn.addEventListener('click', () => copyText(entry.shareUrl, copyShareBtn));
-            const openShareBtn = document.createElement('a');
-            openShareBtn.className = 'btn btn-secondary btn-sm';
-            openShareBtn.href = entry.shareUrl;
-            openShareBtn.target = '_blank';
-            openShareBtn.rel = 'noopener';
-            openShareBtn.textContent = 'เปิด';
-            shareRow.append(shareInput, copyShareBtn, openShareBtn);
+                const dlAlert = $('dlAlert');
+                const btnDownload = $('btnDownload');
+                const btnDirectRaw = $('btnDirectRaw');
 
-            // Direct Raw Link
-            const rawRow = document.createElement('div');
-            rawRow.className = 'link-box';
-            const rawInput = document.createElement('input');
-            rawInput.type = 'text';
-            rawInput.readOnly = true;
-            rawInput.value = entry.rawUrl;
-            const copyRawBtn = document.createElement('button');
-            copyRawBtn.className = 'btn-secondary btn-sm';
-            copyRawBtn.textContent = '🔗 คัดลอกลิงก์ตรง';
-            copyRawBtn.addEventListener('click', () => copyText(entry.rawUrl, copyRawBtn));
-            rawRow.append(rawInput, copyRawBtn);
+                if (!isSafePath(filePath) || !isSafeIdent(owner) || !isSafeIdent(repo) || !isSafeBranch(branch)) {
+                    $('dlFilename').textContent = 'ลิงก์ไม่ถูกต้อง';
+                    showAlert(dlAlert, 'พารามิเตอร์ของลิงก์ไม่ถูกต้องหรือไม่ครบถ้วน', 'error');
+                    btnDownload.disabled = true;
+                    btnDirectRaw.classList.add('hidden');
+                    return;
+                }
 
-            item.append(top, shareRow, rawRow);
-            container.appendChild(item);
-          });
-        }
+                const filename = filePath.split('/').pop() || 'downloaded-file';
+                const rawUrl = buildRawUrl(owner, repo, branch, filePath);
 
-        $('btnClearHistory').addEventListener('click', () => {
-          localStorage.removeItem(STORAGE_HIST_KEY);
-          renderHistory();
-        });
+                $('dlIcon').textContent = getFileIcon(filename);
+                $('dlFilename').textContent = filename;
+                $('dlMeta').textContent = [
+                    Number.isFinite(sizeParam) && sizeParam > 0 ? `ขนาด: ${formatBytes(sizeParam)}` : null,
+                    `จาก ${owner}/${repo}`
+                ].filter(Boolean).join(' · ');
 
-        renderHistory();
-      }
-    })();
-  </script>
+                btnDirectRaw.href = rawUrl;
+                $('backToUpload').href = window.location.pathname || './';
+
+                if (isImageFile(filename)) {
+                    const img = $('dlPreview');
+                    img.src = rawUrl;
+                    img.onload = () => img.classList.remove('hidden');
+                    img.onerror = () => img.classList.add('hidden');
+                }
+
+                $('btnCopyPageLink').addEventListener('click', (e) => {
+                    copyText(window.location.href, e.currentTarget);
+                });
+
+                btnDownload.addEventListener('click', async () => {
+                    hideAlert(dlAlert);
+                    btnDownload.disabled = true;
+                    btnDownload.textContent = '⏳ กำลังเตรียมดาวน์โหลด...';
+                    const pWrap = $('dlProgressWrap');
+                    const pBar = $('dlProgressBar');
+                    pWrap.classList.add('show');
+                    pBar.style.width = '10%';
+
+                    try {
+                        const resp = await fetch(rawUrl);
+                        if (!resp.ok) {
+                            throw new Error(resp.status === 404 ? 'ไม่พบไฟล์นี้ (อาจถูกลบแล้วหรือ Repo เป็น Private)' : `HTTP ${resp.status}`);
+                        }
+
+                        const total = Number(resp.headers.get('Content-Length')) || sizeParam || 0;
+                        let blob;
+
+                        if (resp.body && total > 0) {
+                            const reader = resp.body.getReader();
+                            const chunks = [];
+                            let received = 0;
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                chunks.push(value);
+                                received += value.length;
+                                pBar.style.width = Math.min(99, Math.round((received / total) * 100)) + '%';
+                            }
+                            blob = new Blob(chunks);
+                        } else {
+                            blob = await resp.blob();
+                        }
+
+                        pBar.style.width = '100%';
+                        const objUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = objUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+
+                        showAlert(dlAlert, 'เริ่มดาวน์โหลดไฟล์แล้ว!', 'success');
+                    } catch (err) {
+                        showAlert(dlAlert, `ไม่สามารถดาวน์โหลดอัตโนมัติได้: ${err.message} — ลองกดปุ่ม "เปิดไฟล์โดยตรง" แทน`, 'error');
+                    } finally {
+                        btnDownload.disabled = false;
+                        btnDownload.textContent = '⬇️ ดาวน์โหลดไฟล์';
+                        setTimeout(() => pWrap.classList.remove('show'), 1200);
+                    }
+                });
+            }
+
+            // ==================== UPLOAD MODE ====================
+            function initUploadMode() {
+                $('uploadView').classList.remove('hidden');
+
+                let queuedFiles = [];
+
+                function loadConfig() {
+                    const auto = detectGithubPagesRepo();
+                    let saved = {};
+                    try { saved = JSON.parse(localStorage.getItem(STORAGE_CFG_KEY) || '{}'); } catch { }
+                    return {
+                        owner: saved.owner || auto.owner || '',
+                        repo: saved.repo || auto.repo || '',
+                        branch: saved.branch || 'main',
+                        folder: saved.folder || 'uploads',
+                        token: saved.token || ''
+                    };
+                }
+
+                function saveConfig(cfg) {
+                    localStorage.setItem(STORAGE_CFG_KEY, JSON.stringify(cfg));
+                }
+
+                function readConfigFromInputs() {
+                    return {
+                        owner: $('cfgOwner').value.trim(),
+                        repo: $('cfgRepo').value.trim(),
+                        branch: $('cfgBranch').value.trim() || 'main',
+                        folder: ($('cfgFolder').value.trim() || 'uploads').replace(/^\/+|\/+$/g, ''),
+                        token: $('cfgToken').value.trim()
+                    };
+                }
+
+                function syncConfigUI(collapseIfReady = false) {
+                    const cfg = loadConfig();
+                    $('cfgOwner').value = cfg.owner;
+                    $('cfgRepo').value = cfg.repo;
+                    $('cfgBranch').value = cfg.branch;
+                    $('cfgFolder').value = cfg.folder;
+                    $('cfgToken').value = cfg.token;
+
+                    const ready = Boolean(cfg.owner && cfg.repo && cfg.token);
+                    const badge = $('configBadge');
+                    const summary = $('configSummary');
+
+                    if (ready) {
+                        badge.textContent = 'พร้อมใช้งาน';
+                        badge.className = 'badge badge-ok';
+                        summary.textContent = `ปลายทาง: ${cfg.owner}/${cfg.repo} (branch: ${cfg.branch}, โฟลเดอร์: /${cfg.folder})`;
+                        if (collapseIfReady) {
+                            $('configForm').classList.add('hidden');
+                            summary.classList.remove('hidden');
+                        }
+                    } else {
+                        badge.textContent = 'ยังไม่ตั้งค่า';
+                        badge.className = 'badge badge-warn';
+                        $('configForm').classList.remove('hidden');
+                        summary.classList.add('hidden');
+                    }
+                }
+
+                syncConfigUI(true);
+
+                $('btnToggleConfig').addEventListener('click', () => {
+                    const hidden = $('configForm').classList.toggle('hidden');
+                    $('configSummary').classList.toggle('hidden', !hidden);
+                });
+
+                $('btnSaveConfig').addEventListener('click', () => {
+                    const cfg = readConfigFromInputs();
+                    if (!isSafeIdent(cfg.owner) || !isSafeIdent(cfg.repo) || !isSafeBranch(cfg.branch) || !cfg.token) {
+                        showAlert($('configAlert'), 'กรุณากรอก Username, ชื่อ Repo, Branch และ Token ให้ถูกต้องครบถ้วน', 'error');
+                        return;
+                    }
+                    saveConfig(cfg);
+                    showAlert($('configAlert'), 'บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
+                    syncConfigUI(false);
+                });
+
+                $('btnClearConfig').addEventListener('click', () => {
+                    localStorage.removeItem(STORAGE_CFG_KEY);
+                    syncConfigUI(false);
+                    showAlert($('configAlert'), 'ล้างการตั้งค่าและ Token ออกจากเครื่องแล้ว', 'info');
+                });
+
+                $('btnTestConfig').addEventListener('click', async () => {
+                    const cfg = readConfigFromInputs();
+                    if (!cfg.owner || !cfg.repo || !cfg.token) {
+                        showAlert($('configAlert'), 'กรุณากรอก Username, Repo และ Token ก่อนทดสอบ', 'error');
+                        return;
+                    }
+                    showAlert($('configAlert'), 'กำลังทดสอบการเชื่อมต่อกับ GitHub...', 'info');
+                    try {
+                        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`, {
+                            headers: {
+                                Authorization: `Bearer ${cfg.token}`,
+                                Accept: 'application/vnd.github+json',
+                                'X-GitHub-Api-Version': '2022-11-28'
+                            }
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+                        if (data.private) {
+                            showAlert($('configAlert'), 'เชื่อมต่อสำเร็จ! แต่ Repo นี้เป็น Private — คนอื่นจะดาวน์โหลดไม่ได้จนกว่าจะเปลี่ยนเป็น Public', 'error');
+                        } else {
+                            saveConfig(cfg);
+                            syncConfigUI(false);
+                            showAlert($('configAlert'), `เชื่อมต่อสำเร็จกับ ${data.full_name} (Public) พร้อมอัปโหลดไฟล์แล้ว!`, 'success');
+                        }
+                    } catch (err) {
+                        showAlert($('configAlert'), `เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
+                    }
+                });
+
+                // -------------------- File Selection --------------------
+                const dropzone = $('dropzone');
+                const fileInput = $('fileInput');
+
+                dropzone.addEventListener('click', () => fileInput.click());
+                dropzone.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+                });
+
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('dragover');
+                });
+                dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    addFilesToQueue(e.dataTransfer.files);
+                });
+
+                fileInput.addEventListener('change', () => {
+                    addFilesToQueue(fileInput.files);
+                    fileInput.value = '';
+                });
+
+                function addFilesToQueue(fileList) {
+                    hideAlert($('uploadAlert'));
+                    const rejected = [];
+                    for (const file of fileList) {
+                        if (file.size > MAX_FILE_SIZE) {
+                            rejected.push(`${file.name} (${formatBytes(file.size)})`);
+                        } else {
+                            queuedFiles.push(file);
+                        }
+                    }
+                    if (rejected.length) {
+                        showAlert($('uploadAlert'), `ข้ามไฟล์ที่ใหญ่เกิน 25 MB: ${rejected.join(', ')}`, 'error');
+                    }
+                    renderQueue();
+                }
+
+                function renderQueue() {
+                    const list = $('queueList');
+                    list.innerHTML = '';
+                    $('uploadActions').classList.toggle('hidden', queuedFiles.length === 0);
+
+                    queuedFiles.forEach((file, idx) => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+
+                        const top = document.createElement('div');
+                        top.className = 'file-item-top';
+
+                        const left = document.createElement('div');
+                        const nameEl = document.createElement('div');
+                        nameEl.className = 'file-name';
+                        nameEl.textContent = `${getFileIcon(file.name)} ${file.name}`;
+                        const metaEl = document.createElement('div');
+                        metaEl.className = 'file-meta';
+                        metaEl.textContent = formatBytes(file.size);
+                        left.append(nameEl, metaEl);
+
+                        const rmBtn = document.createElement('button');
+                        rmBtn.className = 'btn-secondary btn-sm';
+                        rmBtn.textContent = 'ลบออก';
+                        rmBtn.addEventListener('click', () => {
+                            queuedFiles.splice(idx, 1);
+                            renderQueue();
+                        });
+
+                        top.append(left, rmBtn);
+                        item.appendChild(top);
+                        list.appendChild(item);
+                    });
+                }
+
+                $('btnClearQueue').addEventListener('click', () => {
+                    queuedFiles = [];
+                    renderQueue();
+                    hideAlert($('uploadAlert'));
+                });
+
+                // -------------------- Upload to GitHub --------------------
+                $('btnStartUpload').addEventListener('click', async () => {
+                    const cfg = loadConfig();
+                    if (!cfg.owner || !cfg.repo || !cfg.token) {
+                        showAlert($('uploadAlert'), 'กรุณาตั้งค่า GitHub Repository และบันทึก Token ด้านบนก่อนอัปโหลด', 'error');
+                        $('configForm').classList.remove('hidden');
+                        return;
+                    }
+                    if (!queuedFiles.length) return;
+
+                    const btnUpload = $('btnStartUpload');
+                    const pWrap = $('uploadProgressWrap');
+                    const pBar = $('uploadProgressBar');
+
+                    btnUpload.disabled = true;
+                    $('btnClearQueue').disabled = true;
+                    pWrap.classList.add('show');
+                    pBar.style.width = '5%';
+
+                    const total = queuedFiles.length;
+                    let successCount = 0;
+                    const errors = [];
+
+                    for (let i = 0; i < total; i++) {
+                        const file = queuedFiles[i];
+                        showAlert($('uploadAlert'), `กำลังอัปโหลด (${i + 1}/${total}): ${file.name}...`, 'info');
+                        try {
+                            const base64 = await fileToBase64(file);
+                            const uid = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+                            const safeName = sanitizeFileName(file.name);
+                            const filePath = `${cfg.folder}/${uid}/${safeName}`;
+
+                            const resp = await fetch(
+                                `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${encodePath(filePath)}`,
+                                {
+                                    method: 'PUT',
+                                    headers: {
+                                        Authorization: `Bearer ${cfg.token}`,
+                                        Accept: 'application/vnd.github+json',
+                                        'Content-Type': 'application/json',
+                                        'X-GitHub-Api-Version': '2022-11-28'
+                                    },
+                                    body: JSON.stringify({
+                                        message: `Upload ${safeName}`,
+                                        content: base64,
+                                        branch: cfg.branch
+                                    })
+                                }
+                            );
+
+                            const data = await resp.json();
+                            if (!resp.ok) {
+                                let reason = data.message || `HTTP ${resp.status}`;
+                                if (resp.status === 401) reason = 'Token ไม่ถูกต้องหรือหมดอายุ';
+                                else if (resp.status === 403) reason = 'Token ไม่มีสิทธิ์เขียนไฟล์ (ต้องเปิด Contents: Read and write)';
+                                else if (resp.status === 404) reason = 'ไม่พบ Repository หรือ Branch ที่ระบุ';
+                                throw new Error(reason);
+                            }
+
+                            const entry = {
+                                name: safeName,
+                                path: filePath,
+                                sha: data.content?.sha || '',
+                                size: file.size,
+                                owner: cfg.owner,
+                                repo: cfg.repo,
+                                branch: cfg.branch,
+                                shareUrl: buildShareUrl(cfg.owner, cfg.repo, cfg.branch, filePath, file.size),
+                                rawUrl: buildRawUrl(cfg.owner, cfg.repo, cfg.branch, filePath),
+                                uploadedAt: new Date().toLocaleString('th-TH')
+                            };
+
+                            addHistory(entry);
+                            successCount++;
+                        } catch (err) {
+                            errors.push(`${file.name}: ${err.message}`);
+                        }
+
+                        pBar.style.width = Math.round(((i + 1) / total) * 100) + '%';
+                    }
+
+                    queuedFiles = [];
+                    renderQueue();
+                    renderHistory();
+
+                    btnUpload.disabled = false;
+                    $('btnClearQueue').disabled = false;
+                    setTimeout(() => pWrap.classList.remove('show'), 1200);
+
+                    if (errors.length === 0) {
+                        showAlert($('uploadAlert'), `อัปโหลดสำเร็จ ${successCount} ไฟล์! คัดลอกลิงก์ด้านล่างเพื่อแชร์ได้เลย`, 'success');
+                    } else {
+                        showAlert($('uploadAlert'), `สำเร็จ ${successCount}/${total} ไฟล์ · ผิดพลาด: ${errors.join(' | ')}`, 'error');
+                    }
+                });
+
+                // -------------------- History & Delete --------------------
+                function getHistory() {
+                    try { return JSON.parse(localStorage.getItem(STORAGE_HIST_KEY) || '[]'); }
+                    catch { return []; }
+                }
+
+                function saveHistory(list) {
+                    localStorage.setItem(STORAGE_HIST_KEY, JSON.stringify(list.slice(0, 50)));
+                }
+
+                function addHistory(entry) {
+                    const list = getHistory();
+                    list.unshift(entry);
+                    saveHistory(list);
+                }
+
+                async function deleteFromGitHub(entry, index) {
+                    if (!confirm(`ต้องการลบไฟล์ "${entry.name}" ออกจาก GitHub Repository จริงหรือไม่?`)) return;
+                    const cfg = loadConfig();
+                    if (!cfg.token) {
+                        showAlert($('uploadAlert'), 'กรุณาใส่ Token ในหน้าตั้งค่าก่อนลบไฟล์บน GitHub', 'error');
+                        return;
+                    }
+                    try {
+                        let sha = entry.sha;
+                        if (!sha) {
+                            const infoRes = await fetch(
+                                `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}?ref=${encodeURIComponent(entry.branch)}`,
+                                { headers: { Authorization: `Bearer ${cfg.token}`, Accept: 'application/vnd.github+json' } }
+                            );
+                            if (infoRes.ok) sha = (await infoRes.json()).sha;
+                        }
+                        const delRes = await fetch(
+                            `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    Authorization: `Bearer ${cfg.token}`,
+                                    Accept: 'application/vnd.github+json',
+                                    'Content-Type': 'application/json',
+                                    'X-GitHub-Api-Version': '2022-11-28'
+                                },
+                                body: JSON.stringify({
+                                    message: `Delete ${entry.name}`,
+                                    sha,
+                                    branch: entry.branch
+                                })
+                            }
+                        );
+                        if (!delRes.ok && delRes.status !== 404) {
+                            const errData = await delRes.json();
+                            throw new Error(errData.message || `HTTP ${delRes.status}`);
+                        }
+                        const list = getHistory();
+                        list.splice(index, 1);
+                        saveHistory(list);
+                        renderHistory();
+                        showAlert($('uploadAlert'), `ลบไฟล์ "${entry.name}" ออกจาก GitHub เรียบร้อยแล้ว`, 'success');
+                    } catch (err) {
+                        showAlert($('uploadAlert'), `ลบไฟล์ไม่สำเร็จ: ${err.message}`, 'error');
+                    }
+                }
+
+                function renderHistory() {
+                    const list = getHistory();
+                    const container = $('historyList');
+                    container.innerHTML = '';
+                    $('historyEmpty').classList.toggle('hidden', list.length > 0);
+
+                    list.forEach((entry, idx) => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+
+                        const top = document.createElement('div');
+                        top.className = 'file-item-top';
+
+                        const info = document.createElement('div');
+                        const nameEl = document.createElement('div');
+                        nameEl.className = 'file-name';
+                        nameEl.textContent = `${getFileIcon(entry.name)} ${entry.name}`;
+                        const metaEl = document.createElement('div');
+                        metaEl.className = 'file-meta';
+                        metaEl.textContent = `${formatBytes(entry.size)} · ${entry.uploadedAt}`;
+                        info.append(nameEl, metaEl);
+
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'btn-danger btn-sm';
+                        delBtn.textContent = '🗑️ ลบจาก GitHub';
+                        delBtn.addEventListener('click', () => deleteFromGitHub(entry, idx));
+
+                        top.append(info, delBtn);
+
+                        // Share Page Link
+                        const shareRow = document.createElement('div');
+                        shareRow.className = 'link-box';
+                        const shareInput = document.createElement('input');
+                        shareInput.type = 'text';
+                        shareInput.readOnly = true;
+                        shareInput.value = entry.shareUrl;
+                        const copyShareBtn = document.createElement('button');
+                        copyShareBtn.className = 'btn-sm';
+                        copyShareBtn.textContent = '📋 คัดลอกลิงก์แชร์';
+                        copyShareBtn.addEventListener('click', () => copyText(entry.shareUrl, copyShareBtn));
+                        const openShareBtn = document.createElement('a');
+                        openShareBtn.className = 'btn btn-secondary btn-sm';
+                        openShareBtn.href = entry.shareUrl;
+                        openShareBtn.target = '_blank';
+                        openShareBtn.rel = 'noopener';
+                        openShareBtn.textContent = 'เปิด';
+                        shareRow.append(shareInput, copyShareBtn, openShareBtn);
+
+                        // Direct Raw Link
+                        const rawRow = document.createElement('div');
+                        rawRow.className = 'link-box';
+                        const rawInput = document.createElement('input');
+                        rawInput.type = 'text';
+                        rawInput.readOnly = true;
+                        rawInput.value = entry.rawUrl;
+                        const copyRawBtn = document.createElement('button');
+                        copyRawBtn.className = 'btn-secondary btn-sm';
+                        copyRawBtn.textContent = '🔗 คัดลอกลิงก์ตรง';
+                        copyRawBtn.addEventListener('click', () => copyText(entry.rawUrl, copyRawBtn));
+                        rawRow.append(rawInput, copyRawBtn);
+
+                        item.append(top, shareRow, rawRow);
+                        container.appendChild(item);
+                    });
+                }
+
+                $('btnClearHistory').addEventListener('click', () => {
+                    localStorage.removeItem(STORAGE_HIST_KEY);
+                    renderHistory();
+                });
+
+                renderHistory();
+            }
+        })();
+    </script>
 </body>
+
 </html>
