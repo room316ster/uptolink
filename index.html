@@ -517,13 +517,13 @@
             <section class="card">
                 <div class="card-header">
                     <div class="card-title">☁️ อัปโหลดไฟล์</div>
-                    <span class="file-meta">สูงสุด 25 MB / ไฟล์</span>
+                    <span class="file-meta">สูงสุด 500 MB / ไฟล์ (เกิน 25 MB แบ่งส่วนอัตโนมัติ)</span>
                 </div>
 
                 <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="เลือกไฟล์เพื่ออัปโหลด">
                     <div class="dropzone-icon">📁</div>
                     <strong>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</strong>
-                    <p>รองรับหลายไฟล์พร้อมกัน (รูปภาพ, PDF, ZIP, เอกสาร ฯลฯ)</p>
+                    <p>รองรับหลายไฟล์พร้อมกัน (รูปภาพ, PDF, ZIP, EXE, เอกสาร ฯลฯ) · ไฟล์เกิน 25 MB จะแบ่งอัปโหลดอัตโนมัติ</p>
                     <input id="fileInput" type="file" multiple class="hidden" />
                 </div>
 
@@ -560,7 +560,9 @@
         (() => {
             const STORAGE_CFG_KEY = 'gh_fileshare_config_v1';
             const STORAGE_HIST_KEY = 'gh_fileshare_history_v1';
-            const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
+            const SINGLE_FILE_LIMIT = 25 * 1024 * 1024; // <= 25 MB: single direct file
+            const CHUNK_SIZE = 20 * 1024 * 1024;        // 20 MB per chunk (~26.7 MB base64, safe for GitHub Contents API)
+            const MAX_FILE_SIZE = 500 * 1024 * 1024;    // 500 MB max per file
 
             const $ = (id) => document.getElementById(id);
 
@@ -606,6 +608,7 @@
                 if (['doc', 'docx', 'txt', 'md', 'rtf'].includes(ext)) return '📝';
                 if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
                 if (['ppt', 'pptx'].includes(ext)) return '📽️';
+                if (['exe', 'msi', 'dmg', 'pkg', 'apk', 'deb', 'rpm'].includes(ext)) return '⚙️';
                 return '📄';
             }
 
@@ -672,13 +675,99 @@
                 return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(branch)}/${encodePath(path)}`;
             }
 
-            function buildShareUrl(owner, repo, branch, path, size) {
+            function buildShareUrl(owner, repo, branch, path, size, extra = {}) {
                 const base = window.location.origin === 'null'
                     ? `https://${owner}.github.io/${repo === `${owner}.github.io` ? '' : repo + '/'}`
                     : window.location.origin + window.location.pathname;
                 const params = new URLSearchParams({ f: path, o: owner, r: repo, b: branch });
                 if (Number.isFinite(size)) params.set('s', String(size));
+                if (extra.isManifest) params.set('m', '1');
+                if (extra.name) params.set('n', extra.name);
                 return `${base}?${params.toString()}`;
+            }
+
+            async function githubPutFile(cfg, filePath, base64Content, message) {
+                const resp = await fetch(
+                    `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${encodePath(filePath)}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `Bearer ${cfg.token}`,
+                            Accept: 'application/vnd.github+json',
+                            'Content-Type': 'application/json',
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        },
+                        body: JSON.stringify({
+                            message,
+                            content: base64Content,
+                            branch: cfg.branch
+                        })
+                    }
+                );
+
+                const rawText = await resp.text();
+                let data = {};
+                try { data = rawText ? JSON.parse(rawText) : {}; } catch { }
+
+                if (!resp.ok) {
+                    let reason = data.message || `HTTP ${resp.status}`;
+                    if (resp.status === 401) reason = 'Token ไม่ถูกต้องหรือหมดอายุ';
+                    else if (resp.status === 403) reason = 'Token ไม่มีสิทธิ์เขียนไฟล์ (ต้องเปิด Contents: Read and write)';
+                    else if (resp.status === 404) reason = 'ไม่พบ Repository หรือ Branch ที่ระบุ';
+                    else if (resp.status === 413) reason = 'ขนาดข้อมูลต่อคำขอใหญ่เกินขีดจำกัดของ GitHub API';
+                    throw new Error(reason);
+                }
+
+                return data;
+            }
+
+            async function githubDeleteFile(token, owner, repo, branch, filePath, sha = '') {
+                let targetSha = sha;
+                if (!targetSha) {
+                    const infoRes = await fetch(
+                        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodePath(filePath)}?ref=${encodeURIComponent(branch)}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                Accept: 'application/vnd.github+json',
+                                'X-GitHub-Api-Version': '2022-11-28'
+                            }
+                        }
+                    );
+                    if (infoRes.status === 404) return;
+                    if (!infoRes.ok) {
+                        const errText = await infoRes.text();
+                        let errMsg = `HTTP ${infoRes.status}`;
+                        try { errMsg = JSON.parse(errText).message || errMsg; } catch { }
+                        throw new Error(errMsg);
+                    }
+                    targetSha = (await infoRes.json()).sha;
+                }
+
+                const delRes = await fetch(
+                    `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodePath(filePath)}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            Accept: 'application/vnd.github+json',
+                            'Content-Type': 'application/json',
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        },
+                        body: JSON.stringify({
+                            message: `Delete ${filePath.split('/').pop() || filePath}`,
+                            sha: targetSha,
+                            branch
+                        })
+                    }
+                );
+
+                if (!delRes.ok && delRes.status !== 404) {
+                    const errText = await delRes.text();
+                    let errMsg = `HTTP ${delRes.status}`;
+                    try { errMsg = JSON.parse(errText).message || errMsg; } catch { }
+                    throw new Error(errMsg);
+                }
             }
 
             // -------------------- Route Check --------------------
@@ -702,6 +791,8 @@
                 const repo = urlParams.get('r') || auto.repo;
                 const branch = urlParams.get('b') || 'main';
                 const sizeParam = Number(urlParams.get('s'));
+                const isManifest = urlParams.get('m') === '1' || filePath.endsWith('/manifest.json');
+                const nameParam = urlParams.get('n') || '';
 
                 const dlAlert = $('dlAlert');
                 const btnDownload = $('btnDownload');
@@ -715,29 +806,66 @@
                     return;
                 }
 
-                const filename = filePath.split('/').pop() || 'downloaded-file';
                 const rawUrl = buildRawUrl(owner, repo, branch, filePath);
-
-                $('dlIcon').textContent = getFileIcon(filename);
-                $('dlFilename').textContent = filename;
-                $('dlMeta').textContent = [
-                    Number.isFinite(sizeParam) && sizeParam > 0 ? `ขนาด: ${formatBytes(sizeParam)}` : null,
-                    `จาก ${owner}/${repo}`
-                ].filter(Boolean).join(' · ');
-
-                btnDirectRaw.href = rawUrl;
                 $('backToUpload').href = window.location.pathname || './';
-
-                if (isImageFile(filename)) {
-                    const img = $('dlPreview');
-                    img.src = rawUrl;
-                    img.onload = () => img.classList.remove('hidden');
-                    img.onerror = () => img.classList.add('hidden');
-                }
 
                 $('btnCopyPageLink').addEventListener('click', (e) => {
                     copyText(window.location.href, e.currentTarget);
                 });
+
+                let loadedManifest = null;
+                const initialName = isManifest
+                    ? (nameParam ? sanitizeFileName(nameParam) : 'กำลังโหลดข้อมูลไฟล์...')
+                    : (filePath.split('/').pop() || 'downloaded-file');
+
+                $('dlIcon').textContent = getFileIcon(initialName);
+                $('dlFilename').textContent = initialName;
+                $('dlMeta').textContent = [
+                    Number.isFinite(sizeParam) && sizeParam > 0 ? `ขนาด: ${formatBytes(sizeParam)}` : null,
+                    isManifest ? 'กำลังตรวจสอบรายการส่วนย่อย...' : null,
+                    `จาก ${owner}/${repo}`
+                ].filter(Boolean).join(' · ');
+
+                async function fetchAndValidateManifest() {
+                    const resp = await fetch(rawUrl);
+                    if (!resp.ok) {
+                        throw new Error(resp.status === 404 ? 'ไม่พบไฟล์นี้ (อาจถูกลบแล้วหรือ Repo เป็น Private)' : `HTTP ${resp.status}`);
+                    }
+                    const data = await resp.json();
+                    if (!data || !Array.isArray(data.parts) || data.parts.length === 0 || !data.parts.every((p) => p && isSafePath(p.path))) {
+                        throw new Error('ข้อมูลไฟล์ (manifest.json) ไม่ถูกต้องหรือเสียหาย');
+                    }
+                    return data;
+                }
+
+                if (isManifest) {
+                    btnDirectRaw.classList.add('hidden');
+                    (async () => {
+                        try {
+                            loadedManifest = await fetchAndValidateManifest();
+                            const resolvedName = sanitizeFileName(loadedManifest.name || nameParam || 'downloaded-file');
+                            const resolvedSize = Number(loadedManifest.size) || sizeParam;
+                            $('dlIcon').textContent = getFileIcon(resolvedName);
+                            $('dlFilename').textContent = resolvedName;
+                            $('dlMeta').textContent = [
+                                Number.isFinite(resolvedSize) && resolvedSize > 0 ? `ขนาด: ${formatBytes(resolvedSize)}` : null,
+                                `แบ่ง ${loadedManifest.parts.length} ส่วน`,
+                                `จาก ${owner}/${repo}`
+                            ].filter(Boolean).join(' · ');
+                        } catch (err) {
+                            showAlert(dlAlert, `ไม่สามารถโหลดข้อมูลไฟล์ได้: ${err.message}`, 'error');
+                            btnDownload.disabled = true;
+                        }
+                    })();
+                } else {
+                    btnDirectRaw.href = rawUrl;
+                    if (isImageFile(initialName)) {
+                        const img = $('dlPreview');
+                        img.src = rawUrl;
+                        img.onload = () => img.classList.remove('hidden');
+                        img.onerror = () => img.classList.add('hidden');
+                    }
+                }
 
                 btnDownload.addEventListener('click', async () => {
                     hideAlert(dlAlert);
@@ -746,46 +874,92 @@
                     const pWrap = $('dlProgressWrap');
                     const pBar = $('dlProgressBar');
                     pWrap.classList.add('show');
-                    pBar.style.width = '10%';
+                    pBar.style.width = '5%';
 
                     try {
-                        const resp = await fetch(rawUrl);
-                        if (!resp.ok) {
-                            throw new Error(resp.status === 404 ? 'ไม่พบไฟล์นี้ (อาจถูกลบแล้วหรือ Repo เป็น Private)' : `HTTP ${resp.status}`);
-                        }
-
-                        const total = Number(resp.headers.get('Content-Length')) || sizeParam || 0;
                         let blob;
+                        let downloadFilename = initialName;
 
-                        if (resp.body && total > 0) {
-                            const reader = resp.body.getReader();
-                            const chunks = [];
-                            let received = 0;
-                            while (true) {
-                                const { done, value } = await reader.read();
-                                if (done) break;
-                                chunks.push(value);
-                                received += value.length;
-                                pBar.style.width = Math.min(99, Math.round((received / total) * 100)) + '%';
+                        if (isManifest) {
+                            if (!loadedManifest) {
+                                loadedManifest = await fetchAndValidateManifest();
                             }
-                            blob = new Blob(chunks);
+                            downloadFilename = sanitizeFileName(loadedManifest.name || nameParam || 'downloaded-file');
+                            const parts = loadedManifest.parts;
+                            const totalExpected = Number(loadedManifest.size) || parts.reduce((acc, p) => acc + (Number(p.size) || 0), 0);
+                            const allChunks = [];
+                            let totalReceived = 0;
+
+                            for (let idx = 0; idx < parts.length; idx++) {
+                                const part = parts[idx];
+                                btnDownload.textContent = `⏳ กำลังดาวน์โหลดส่วนที่ ${idx + 1}/${parts.length}...`;
+                                const partResp = await fetch(buildRawUrl(owner, repo, branch, part.path));
+                                if (!partResp.ok) {
+                                    throw new Error(partResp.status === 404
+                                        ? `ไม่พบไฟล์ส่วนที่ ${idx + 1}/${parts.length} (อาจถูกลบแล้ว)`
+                                        : `HTTP ${partResp.status} (ส่วนที่ ${idx + 1})`);
+                                }
+
+                                if (partResp.body) {
+                                    const reader = partResp.body.getReader();
+                                    while (true) {
+                                        const { done, value } = await reader.read();
+                                        if (done) break;
+                                        allChunks.push(value);
+                                        totalReceived += value.length;
+                                        if (totalExpected > 0) {
+                                            pBar.style.width = Math.min(99, Math.round((totalReceived / totalExpected) * 100)) + '%';
+                                        }
+                                    }
+                                } else {
+                                    const buf = await partResp.arrayBuffer();
+                                    allChunks.push(new Uint8Array(buf));
+                                    totalReceived += buf.byteLength;
+                                    pBar.style.width = totalExpected > 0
+                                        ? Math.min(99, Math.round((totalReceived / totalExpected) * 100)) + '%'
+                                        : Math.min(99, Math.round(((idx + 1) / parts.length) * 100)) + '%';
+                                }
+                            }
+
+                            blob = new Blob(allChunks, { type: loadedManifest.type || 'application/octet-stream' });
                         } else {
-                            blob = await resp.blob();
+                            const resp = await fetch(rawUrl);
+                            if (!resp.ok) {
+                                throw new Error(resp.status === 404 ? 'ไม่พบไฟล์นี้ (อาจถูกลบแล้วหรือ Repo เป็น Private)' : `HTTP ${resp.status}`);
+                            }
+
+                            const total = Number(resp.headers.get('Content-Length')) || sizeParam || 0;
+                            if (resp.body && total > 0) {
+                                const reader = resp.body.getReader();
+                                const chunks = [];
+                                let received = 0;
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    chunks.push(value);
+                                    received += value.length;
+                                    pBar.style.width = Math.min(99, Math.round((received / total) * 100)) + '%';
+                                }
+                                blob = new Blob(chunks);
+                            } else {
+                                blob = await resp.blob();
+                            }
                         }
 
                         pBar.style.width = '100%';
                         const objUrl = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = objUrl;
-                        a.download = filename;
+                        a.download = downloadFilename;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
                         setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
 
-                        showAlert(dlAlert, 'เริ่มดาวน์โหลดไฟล์แล้ว!', 'success');
+                        showAlert(dlAlert, isManifest ? 'รวมไฟล์และเริ่มดาวน์โหลดแล้ว!' : 'เริ่มดาวน์โหลดไฟล์แล้ว!', 'success');
                     } catch (err) {
-                        showAlert(dlAlert, `ไม่สามารถดาวน์โหลดอัตโนมัติได้: ${err.message} — ลองกดปุ่ม "เปิดไฟล์โดยตรง" แทน`, 'error');
+                        const fallbackHint = isManifest ? '' : ' — ลองกดปุ่ม "เปิดไฟล์โดยตรง" แทน';
+                        showAlert(dlAlert, `ไม่สามารถดาวน์โหลดอัตโนมัติได้: ${err.message}${fallbackHint}`, 'error');
                     } finally {
                         btnDownload.disabled = false;
                         btnDownload.textContent = '⬇️ ดาวน์โหลดไฟล์';
@@ -944,7 +1118,7 @@
                         }
                     }
                     if (rejected.length) {
-                        showAlert($('uploadAlert'), `ข้ามไฟล์ที่ใหญ่เกิน 25 MB: ${rejected.join(', ')}`, 'error');
+                        showAlert($('uploadAlert'), `ข้ามไฟล์ที่ใหญ่เกิน ${formatBytes(MAX_FILE_SIZE)}: ${rejected.join(', ')}`, 'error');
                     }
                     renderQueue();
                 }
@@ -967,7 +1141,9 @@
                         nameEl.textContent = `${getFileIcon(file.name)} ${file.name}`;
                         const metaEl = document.createElement('div');
                         metaEl.className = 'file-meta';
-                        metaEl.textContent = formatBytes(file.size);
+                        metaEl.textContent = file.size > SINGLE_FILE_LIMIT
+                            ? `${formatBytes(file.size)} · แบ่งอัปโหลด ${Math.ceil(file.size / CHUNK_SIZE)} ส่วนอัตโนมัติ`
+                            : formatBytes(file.size);
                         left.append(nameEl, metaEl);
 
                         const rmBtn = document.createElement('button');
@@ -1015,57 +1191,98 @@
 
                     for (let i = 0; i < total; i++) {
                         const file = queuedFiles[i];
-                        showAlert($('uploadAlert'), `กำลังอัปโหลด (${i + 1}/${total}): ${file.name}...`, 'info');
-                        try {
-                            const base64 = await fileToBase64(file);
-                            const uid = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-                            const safeName = sanitizeFileName(file.name);
-                            const filePath = `${cfg.folder}/${uid}/${safeName}`;
+                        const uid = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+                        const safeName = sanitizeFileName(file.name);
 
-                            const resp = await fetch(
-                                `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${encodePath(filePath)}`,
-                                {
-                                    method: 'PUT',
-                                    headers: {
-                                        Authorization: `Bearer ${cfg.token}`,
-                                        Accept: 'application/vnd.github+json',
-                                        'Content-Type': 'application/json',
-                                        'X-GitHub-Api-Version': '2022-11-28'
-                                    },
-                                    body: JSON.stringify({
-                                        message: `Upload ${safeName}`,
-                                        content: base64,
-                                        branch: cfg.branch
-                                    })
-                                }
-                            );
+                        if (file.size <= SINGLE_FILE_LIMIT) {
+                            showAlert($('uploadAlert'), `กำลังอัปโหลด (${i + 1}/${total}): ${file.name}...`, 'info');
+                            try {
+                                const base64 = await fileToBase64(file);
+                                const filePath = `${cfg.folder}/${uid}/${safeName}`;
+                                const data = await githubPutFile(cfg, filePath, base64, `Upload ${safeName}`);
 
-                            const data = await resp.json();
-                            if (!resp.ok) {
-                                let reason = data.message || `HTTP ${resp.status}`;
-                                if (resp.status === 401) reason = 'Token ไม่ถูกต้องหรือหมดอายุ';
-                                else if (resp.status === 403) reason = 'Token ไม่มีสิทธิ์เขียนไฟล์ (ต้องเปิด Contents: Read and write)';
-                                else if (resp.status === 404) reason = 'ไม่พบ Repository หรือ Branch ที่ระบุ';
-                                throw new Error(reason);
+                                const entry = {
+                                    name: safeName,
+                                    path: filePath,
+                                    sha: data.content?.sha || '',
+                                    size: file.size,
+                                    isChunked: false,
+                                    owner: cfg.owner,
+                                    repo: cfg.repo,
+                                    branch: cfg.branch,
+                                    shareUrl: buildShareUrl(cfg.owner, cfg.repo, cfg.branch, filePath, file.size),
+                                    rawUrl: buildRawUrl(cfg.owner, cfg.repo, cfg.branch, filePath),
+                                    uploadedAt: new Date().toLocaleString('th-TH')
+                                };
+
+                                addHistory(entry);
+                                successCount++;
+                            } catch (err) {
+                                errors.push(`${file.name}: ${err.message}`);
                             }
+                        } else {
+                            const totalParts = Math.ceil(file.size / CHUNK_SIZE);
+                            const uploadedParts = [];
+                            try {
+                                for (let p = 0; p < totalParts; p++) {
+                                    showAlert($('uploadAlert'), `กำลังอัปโหลด (${i + 1}/${total}): ${file.name} — ส่วนที่ ${p + 1}/${totalParts}...`, 'info');
+                                    const start = p * CHUNK_SIZE;
+                                    const end = Math.min(file.size, start + CHUNK_SIZE);
+                                    const chunkBlob = file.slice(start, end);
+                                    const chunkBase64 = await fileToBase64(chunkBlob);
+                                    const partPath = `${cfg.folder}/${uid}/part-${String(p).padStart(3, '0')}.bin`;
+                                    const partData = await githubPutFile(cfg, partPath, chunkBase64, `Upload ${safeName} (part ${p + 1}/${totalParts})`);
 
-                            const entry = {
-                                name: safeName,
-                                path: filePath,
-                                sha: data.content?.sha || '',
-                                size: file.size,
-                                owner: cfg.owner,
-                                repo: cfg.repo,
-                                branch: cfg.branch,
-                                shareUrl: buildShareUrl(cfg.owner, cfg.repo, cfg.branch, filePath, file.size),
-                                rawUrl: buildRawUrl(cfg.owner, cfg.repo, cfg.branch, filePath),
-                                uploadedAt: new Date().toLocaleString('th-TH')
-                            };
+                                    uploadedParts.push({
+                                        path: partPath,
+                                        size: chunkBlob.size,
+                                        sha: partData.content?.sha || ''
+                                    });
 
-                            addHistory(entry);
-                            successCount++;
-                        } catch (err) {
-                            errors.push(`${file.name}: ${err.message}`);
+                                    const fileProgress = (p + 1) / (totalParts + 1);
+                                    pBar.style.width = Math.max(5, Math.round(((i + fileProgress) / total) * 100)) + '%';
+                                }
+
+                                showAlert($('uploadAlert'), `กำลังสร้างไฟล์ข้อมูล (${i + 1}/${total}): ${file.name}...`, 'info');
+                                const manifest = {
+                                    v: 1,
+                                    name: safeName,
+                                    size: file.size,
+                                    type: file.type || 'application/octet-stream',
+                                    chunkSize: CHUNK_SIZE,
+                                    parts: uploadedParts.map(({ path, size }) => ({ path, size }))
+                                };
+                                const manifestBase64 = await fileToBase64(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+                                const manifestPath = `${cfg.folder}/${uid}/manifest.json`;
+                                const manifestData = await githubPutFile(cfg, manifestPath, manifestBase64, `Upload manifest for ${safeName}`);
+
+                                const entry = {
+                                    name: safeName,
+                                    path: manifestPath,
+                                    sha: manifestData.content?.sha || '',
+                                    size: file.size,
+                                    isChunked: true,
+                                    partsCount: totalParts,
+                                    parts: uploadedParts,
+                                    owner: cfg.owner,
+                                    repo: cfg.repo,
+                                    branch: cfg.branch,
+                                    shareUrl: buildShareUrl(cfg.owner, cfg.repo, cfg.branch, manifestPath, file.size, { isManifest: true, name: safeName }),
+                                    rawUrl: '',
+                                    uploadedAt: new Date().toLocaleString('th-TH')
+                                };
+
+                                addHistory(entry);
+                                successCount++;
+                            } catch (err) {
+                                // Best-effort cleanup of partial chunks already uploaded
+                                for (const part of uploadedParts) {
+                                    try {
+                                        await githubDeleteFile(cfg.token, cfg.owner, cfg.repo, cfg.branch, part.path, part.sha);
+                                    } catch { }
+                                }
+                                errors.push(`${file.name}: ${err.message}`);
+                            }
                         }
 
                         pBar.style.width = Math.round(((i + 1) / total) * 100) + '%';
@@ -1110,35 +1327,26 @@
                         return;
                     }
                     try {
-                        let sha = entry.sha;
-                        if (!sha) {
-                            const infoRes = await fetch(
-                                `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}?ref=${encodeURIComponent(entry.branch)}`,
-                                { headers: { Authorization: `Bearer ${cfg.token}`, Accept: 'application/vnd.github+json' } }
-                            );
-                            if (infoRes.ok) sha = (await infoRes.json()).sha;
-                        }
-                        const delRes = await fetch(
-                            `https://api.github.com/repos/${encodeURIComponent(entry.owner)}/${encodeURIComponent(entry.repo)}/contents/${encodePath(entry.path)}`,
-                            {
-                                method: 'DELETE',
-                                headers: {
-                                    Authorization: `Bearer ${cfg.token}`,
-                                    Accept: 'application/vnd.github+json',
-                                    'Content-Type': 'application/json',
-                                    'X-GitHub-Api-Version': '2022-11-28'
-                                },
-                                body: JSON.stringify({
-                                    message: `Delete ${entry.name}`,
-                                    sha,
-                                    branch: entry.branch
-                                })
+                        if (entry.isChunked) {
+                            let partsToDelete = Array.isArray(entry.parts) && entry.parts.length ? entry.parts : [];
+                            if (partsToDelete.length === 0) {
+                                try {
+                                    const mfRes = await fetch(buildRawUrl(entry.owner, entry.repo, entry.branch, entry.path));
+                                    if (mfRes.ok) {
+                                        const mf = await mfRes.json();
+                                        if (Array.isArray(mf.parts)) partsToDelete = mf.parts;
+                                    }
+                                } catch { }
                             }
-                        );
-                        if (!delRes.ok && delRes.status !== 404) {
-                            const errData = await delRes.json();
-                            throw new Error(errData.message || `HTTP ${delRes.status}`);
+                            showAlert($('uploadAlert'), `กำลังลบไฟล์ "${entry.name}" (${partsToDelete.length} ส่วน) ออกจาก GitHub...`, 'info');
+                            for (const part of partsToDelete) {
+                                await githubDeleteFile(cfg.token, entry.owner, entry.repo, entry.branch, part.path, part.sha || '');
+                            }
+                            await githubDeleteFile(cfg.token, entry.owner, entry.repo, entry.branch, entry.path, entry.sha || '');
+                        } else {
+                            await githubDeleteFile(cfg.token, entry.owner, entry.repo, entry.branch, entry.path, entry.sha || '');
                         }
+
                         const list = getHistory();
                         list.splice(index, 1);
                         saveHistory(list);
@@ -1168,7 +1376,9 @@
                         nameEl.textContent = `${getFileIcon(entry.name)} ${entry.name}`;
                         const metaEl = document.createElement('div');
                         metaEl.className = 'file-meta';
-                        metaEl.textContent = `${formatBytes(entry.size)} · ${entry.uploadedAt}`;
+                        metaEl.textContent = entry.isChunked
+                            ? `${formatBytes(entry.size)} · แบ่ง ${entry.partsCount || entry.parts?.length || '?'} ส่วน · ${entry.uploadedAt}`
+                            : `${formatBytes(entry.size)} · ${entry.uploadedAt}`;
                         info.append(nameEl, metaEl);
 
                         const delBtn = document.createElement('button');
@@ -1197,20 +1407,24 @@
                         openShareBtn.textContent = 'เปิด';
                         shareRow.append(shareInput, copyShareBtn, openShareBtn);
 
-                        // Direct Raw Link
-                        const rawRow = document.createElement('div');
-                        rawRow.className = 'link-box';
-                        const rawInput = document.createElement('input');
-                        rawInput.type = 'text';
-                        rawInput.readOnly = true;
-                        rawInput.value = entry.rawUrl;
-                        const copyRawBtn = document.createElement('button');
-                        copyRawBtn.className = 'btn-secondary btn-sm';
-                        copyRawBtn.textContent = '🔗 คัดลอกลิงก์ตรง';
-                        copyRawBtn.addEventListener('click', () => copyText(entry.rawUrl, copyRawBtn));
-                        rawRow.append(rawInput, copyRawBtn);
+                        item.append(top, shareRow);
 
-                        item.append(top, shareRow, rawRow);
+                        // Direct Raw Link (for single non-chunked files)
+                        if (!entry.isChunked && entry.rawUrl) {
+                            const rawRow = document.createElement('div');
+                            rawRow.className = 'link-box';
+                            const rawInput = document.createElement('input');
+                            rawInput.type = 'text';
+                            rawInput.readOnly = true;
+                            rawInput.value = entry.rawUrl;
+                            const copyRawBtn = document.createElement('button');
+                            copyRawBtn.className = 'btn-secondary btn-sm';
+                            copyRawBtn.textContent = '🔗 คัดลอกลิงก์ตรง';
+                            copyRawBtn.addEventListener('click', () => copyText(entry.rawUrl, copyRawBtn));
+                            rawRow.append(rawInput, copyRawBtn);
+                            item.appendChild(rawRow);
+                        }
+
                         container.appendChild(item);
                     });
                 }
