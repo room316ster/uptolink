@@ -422,6 +422,44 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        .login-card {
+            max-width: 460px;
+            margin: 0 auto 18px;
+        }
+
+        .vault-code {
+            width: 100%;
+            min-height: 92px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card-2);
+            color: #a5b4fc;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.78rem;
+            resize: vertical;
+        }
+
+        .section-divider {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 16px 0;
+        }
+
+        .sub-heading {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+
+        .admin-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -453,33 +491,147 @@
 
             <div style="margin-top: 24px;">
                 <a id="backToUpload" href="./" style="color: var(--muted); font-size: 0.88rem;">←
-                    กลับไปหน้าอัปโหลดไฟล์</a>
+                    เข้าสู่ระบบผู้ดูแล (Admin)</a>
+            </div>
+        </section>
+
+        <!-- ==================== ADMIN LOGIN VIEW ==================== -->
+        <section id="adminLoginView" class="card login-card hidden">
+            <div class="card-header">
+                <div class="card-title">🔐 เข้าสู่ระบบผู้ดูแล (Admin)</div>
+            </div>
+            <p class="file-meta" style="margin-bottom: 14px;">
+                เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถอัปโหลดและจัดการไฟล์ได้ · ผู้ที่ได้รับลิงก์แชร์สามารถดาวน์โหลดได้โดยไม่ต้องล็อกอิน
+            </p>
+            <form id="loginForm">
+                <div class="field">
+                    <label for="loginUser">ชื่อผู้ใช้ (Username)</label>
+                    <input id="loginUser" type="text" placeholder="admin" autocomplete="username" required />
+                </div>
+                <div class="field">
+                    <label for="loginPass">รหัสผ่าน (Password)</label>
+                    <input id="loginPass" type="password" placeholder="กรอกรหัสผ่านผู้ดูแล"
+                        autocomplete="current-password" required />
+                </div>
+                <div class="btn-row">
+                    <button id="btnLogin" type="submit" style="width: 100%;">🔓 เข้าสู่ระบบ</button>
+                </div>
+            </form>
+            <div id="loginAlert" class="alert"></div>
+            <div id="localVaultResetRow" class="hidden" style="margin-top: 14px; text-align: right;">
+                <button id="btnResetLocalVault" type="button" class="btn-secondary btn-sm">รีเซ็ต Vault ในเครื่องนี้</button>
+            </div>
+        </section>
+
+        <!-- ==================== ADMIN SETUP VIEW ==================== -->
+        <section id="adminSetupView" class="card hidden">
+            <div class="card-header">
+                <div class="card-title">🛡️ ตั้งค่า Admin Login ครั้งแรก</div>
+                <span class="badge badge-warn">ยังไม่ได้ตั้งค่า Vault</span>
+            </div>
+            <p class="file-meta" style="margin-bottom: 14px;">
+                ตั้ง Username และ Password สำหรับผู้ดูแล แล้วระบบจะเข้ารหัส GitHub Token ด้วย <code>AES-256-GCM</code>
+                เพื่อไม่ให้ Token ถูกเปิดเผยในซอร์สโค้ด
+            </p>
+
+            <div class="sub-heading">1. บัญชีผู้ดูแลระบบ</div>
+            <div class="field">
+                <label for="setupAdminUser">ชื่อผู้ใช้ Admin (Username)</label>
+                <input id="setupAdminUser" type="text" value="admin" placeholder="admin" autocomplete="username" />
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="setupAdminPass">รหัสผ่าน Admin (อย่างน้อย 8 ตัวอักษร)</label>
+                    <input id="setupAdminPass" type="password" placeholder="ตั้งรหัสผ่านที่เดายาก"
+                        autocomplete="new-password" />
+                </div>
+                <div class="field">
+                    <label for="setupAdminPassConfirm">ยืนยันรหัสผ่าน Admin</label>
+                    <input id="setupAdminPassConfirm" type="password" placeholder="กรอกรหัสผ่านอีกครั้ง"
+                        autocomplete="new-password" />
+                </div>
+            </div>
+
+            <hr class="section-divider" />
+            <div class="sub-heading">2. ข้อมูล GitHub Repository</div>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="setupOwner">GitHub Username (เจ้าของ Repo)</label>
+                    <input id="setupOwner" type="text" placeholder="เช่น room316ster" autocomplete="off" />
+                </div>
+                <div class="field">
+                    <label for="setupRepo">ชื่อ Repository (ต้องเป็น Public)</label>
+                    <input id="setupRepo" type="text" placeholder="เช่น uptolink" autocomplete="off" />
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label for="setupBranch">Branch</label>
+                    <input id="setupBranch" type="text" value="main" placeholder="main" autocomplete="off" />
+                </div>
+                <div class="field">
+                    <label for="setupFolder">โฟลเดอร์เก็บไฟล์ใน Repo</label>
+                    <input id="setupFolder" type="text" value="uploads" placeholder="uploads" autocomplete="off" />
+                </div>
+            </div>
+            <div class="field">
+                <label for="setupToken">GitHub Personal Access Token (Fine-grained PAT)</label>
+                <input id="setupToken" type="password" placeholder="github_pat_..." autocomplete="off" />
+                <div class="hint">
+                    🔒 ต้องเปิดสิทธิ์ <code>Contents: Read and write</code> · Token จะถูกเข้ารหัสก่อนบันทึกทุกครั้ง
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button id="btnSetupTestGitHub" type="button" class="btn-secondary">🔌 ทดสอบการเชื่อมต่อ GitHub</button>
+                <button id="btnSetupCreateVault" type="button">🔐 เข้ารหัสและสร้าง Admin Login</button>
+            </div>
+            <div id="setupAlert" class="alert"></div>
+
+            <div id="setupResultBox" class="hidden">
+                <hr class="section-divider" />
+                <div class="sub-heading">3. นำ Vault ที่เข้ารหัสแล้วไปใช้งานข้ามเครื่อง</div>
+                <p class="file-meta" style="margin-bottom: 8px;">
+                    บันทึก Vault ลงเบราว์เซอร์เครื่องนี้แล้ว! หากต้องการล็อกอินด้วย Username + Password จากเครื่องอื่นหรือมือถือ
+                    ให้กด <strong>อัปเดตขึ้น index.html บน GitHub</strong> หรือคัดลอกโค้ดด้านล่างไปแทนที่บล็อก <code>ADMIN_VAULT</code> ในไฟล์ <code>index.html</code>
+                </p>
+                <textarea id="setupVaultCode" class="vault-code" readonly></textarea>
+                <div class="btn-row">
+                    <button id="btnCopySetupVault" type="button" class="btn-secondary">📋 คัดลอกโค้ด ADMIN_VAULT</button>
+                    <button id="btnPushSetupVault" type="button">☁️ อัปเดตขึ้น index.html บน GitHub</button>
+                    <button id="btnEnterAdminAfterSetup" type="button" class="btn-success">➡️ เข้าสู่หน้าอัปโหลดไฟล์</button>
+                </div>
+                <div id="setupPushAlert" class="alert"></div>
             </div>
         </section>
 
         <!-- ==================== UPLOAD VIEW ==================== -->
         <main id="uploadView" class="hidden">
-            <!-- GitHub Config Card -->
+            <!-- Admin Status & Settings Card -->
             <section class="card">
                 <div class="card-header">
                     <div class="card-title">
-                        ⚙️ ตั้งค่า GitHub Repository
-                        <span id="configBadge" class="badge badge-warn">ยังไม่ตั้งค่า</span>
+                        🛡️ โหมดผู้ดูแลระบบ
+                        <span id="configBadge" class="badge badge-ok">เข้าสู่ระบบแล้ว</span>
                     </div>
-                    <button id="btnToggleConfig" class="btn-secondary btn-sm">ซ่อน/แสดง</button>
+                    <div class="admin-actions">
+                        <button id="btnToggleConfig" type="button" class="btn-secondary btn-sm">⚙️ ตั้งค่า / เปลี่ยนรหัสผ่าน</button>
+                        <button id="btnLogout" type="button" class="btn-danger btn-sm">🚪 ออกจากระบบ</button>
+                    </div>
                 </div>
 
-                <div id="configSummary" class="file-meta hidden"></div>
+                <div id="configSummary" class="file-meta"></div>
 
-                <div id="configForm">
+                <div id="configForm" class="hidden" style="margin-top: 14px;">
+                    <div class="sub-heading">ข้อมูล GitHub Repository</div>
                     <div class="grid-2">
                         <div class="field">
                             <label for="cfgOwner">GitHub Username (เจ้าของ Repo)</label>
-                            <input id="cfgOwner" type="text" placeholder="เช่น your-username" autocomplete="off" />
+                            <input id="cfgOwner" type="text" placeholder="เช่น room316ster" autocomplete="off" />
                         </div>
                         <div class="field">
                             <label for="cfgRepo">ชื่อ Repository (ต้องเป็น Public)</label>
-                            <input id="cfgRepo" type="text" placeholder="เช่น my-file-share" autocomplete="off" />
+                            <input id="cfgRepo" type="text" placeholder="เช่น uptolink" autocomplete="off" />
                         </div>
                     </div>
 
@@ -499,17 +651,45 @@
                         <label for="cfgToken">GitHub Personal Access Token (Fine-grained PAT)</label>
                         <input id="cfgToken" type="password" placeholder="github_pat_..." autocomplete="off" />
                         <div class="hint">
-                            🔒 Token จะถูกบันทึกไว้เฉพาะในเบราว์เซอร์เครื่องนี้เท่านั้น (ห้ามใส่ Token ลงในโค้ด) ·
-                            ต้องเปิดสิทธิ์ <code>Contents: Read and write</code>
+                            🔒 Token ถูกเข้ารหัสด้วยรหัสผ่าน Admin และเก็บเฉพาะใน Session ชั่วคราวระหว่างที่ล็อกอิน
+                        </div>
+                    </div>
+
+                    <hr class="section-divider" />
+                    <div class="sub-heading">บัญชีผู้ดูแล (กรอกรหัสผ่านเพื่อบันทึกและเข้ารหัส Vault ใหม่)</div>
+                    <div class="field">
+                        <label for="cfgAdminUser">ชื่อผู้ใช้ Admin (Username)</label>
+                        <input id="cfgAdminUser" type="text" placeholder="admin" autocomplete="username" />
+                    </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="cfgAdminPass">รหัสผ่านใหม่หรือรหัสผ่านปัจจุบัน (อย่างน้อย 8 ตัว)</label>
+                            <input id="cfgAdminPass" type="password" placeholder="กรอกรหัสผ่านเพื่อเข้ารหัส"
+                                autocomplete="new-password" />
+                        </div>
+                        <div class="field">
+                            <label for="cfgAdminPassConfirm">ยืนยันรหัสผ่าน</label>
+                            <input id="cfgAdminPassConfirm" type="password" placeholder="กรอกรหัสผ่านอีกครั้ง"
+                                autocomplete="new-password" />
                         </div>
                     </div>
 
                     <div class="btn-row">
-                        <button id="btnSaveConfig">💾 บันทึกการตั้งค่า</button>
-                        <button id="btnTestConfig" class="btn-secondary">🔌 ทดสอบการเชื่อมต่อ</button>
-                        <button id="btnClearConfig" class="btn-danger">ล้างค่า</button>
+                        <button id="btnTestConfig" type="button" class="btn-secondary">🔌 ทดสอบการเชื่อมต่อ</button>
+                        <button id="btnSaveVault" type="button">🔐 บันทึกและเข้ารหัส Vault ใหม่</button>
                     </div>
                     <div id="configAlert" class="alert"></div>
+
+                    <div id="configVaultBox" class="hidden">
+                        <hr class="section-divider" />
+                        <div class="sub-heading">โค้ด ADMIN_VAULT ล่าสุด</div>
+                        <textarea id="configVaultCode" class="vault-code" readonly></textarea>
+                        <div class="btn-row">
+                            <button id="btnCopyConfigVault" type="button" class="btn-secondary">📋 คัดลอกโค้ด ADMIN_VAULT</button>
+                            <button id="btnPushConfigVault" type="button">☁️ อัปเดตขึ้น index.html บน GitHub</button>
+                        </div>
+                        <div id="configPushAlert" class="alert"></div>
+                    </div>
                 </div>
             </section>
 
@@ -558,8 +738,15 @@
 
     <script>
         (() => {
-            const STORAGE_CFG_KEY = 'gh_fileshare_config_v1';
+            /* ADMIN_VAULT_START */
+            const ADMIN_VAULT = null;
+            /* ADMIN_VAULT_END */
+
+            const LEGACY_CFG_KEY = 'gh_fileshare_config_v1';
+            const STORAGE_VAULT_KEY = 'gh_fileshare_admin_vault_v1';
+            const SESSION_AUTH_KEY = 'gh_fileshare_admin_session_v1';
             const STORAGE_HIST_KEY = 'gh_fileshare_history_v1';
+            const VAULT_ITERATIONS = 310000;
             const SINGLE_FILE_LIMIT = 25 * 1024 * 1024; // <= 25 MB: single direct file
             const CHUNK_SIZE = 20 * 1024 * 1024;        // 20 MB per chunk (~26.7 MB base64, safe for GitHub Contents API)
             const MAX_FILE_SIZE = 500 * 1024 * 1024;    // 500 MB max per file
@@ -686,7 +873,14 @@
                 return `${base}?${params.toString()}`;
             }
 
-            async function githubPutFile(cfg, filePath, base64Content, message) {
+            async function githubPutFile(cfg, filePath, base64Content, message, sha = '') {
+                const bodyObj = {
+                    message,
+                    content: base64Content,
+                    branch: cfg.branch
+                };
+                if (sha) bodyObj.sha = sha;
+
                 const resp = await fetch(
                     `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${encodePath(filePath)}`,
                     {
@@ -697,11 +891,7 @@
                             'Content-Type': 'application/json',
                             'X-GitHub-Api-Version': '2022-11-28'
                         },
-                        body: JSON.stringify({
-                            message,
-                            content: base64Content,
-                            branch: cfg.branch
-                        })
+                        body: JSON.stringify(bodyObj)
                     }
                 );
 
@@ -770,6 +960,191 @@
                 }
             }
 
+            // -------------------- Crypto & Admin Vault --------------------
+            function bytesToBase64(bytes) {
+                let binary = '';
+                const chunk = 0x8000;
+                for (let i = 0; i < bytes.length; i += chunk) {
+                    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+                }
+                return btoa(binary);
+            }
+
+            function base64ToBytes(b64) {
+                const binary = atob(b64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
+            }
+
+            function ensureWebCrypto() {
+                if (!window.crypto || !window.crypto.subtle) {
+                    throw new Error('เบราว์เซอร์ไม่รองรับ Web Crypto API (ต้องเปิดผ่าน HTTPS หรือ localhost)');
+                }
+            }
+
+            async function deriveVaultKey(username, password, saltBytes, iterations = VAULT_ITERATIONS) {
+                ensureWebCrypto();
+                const normUser = String(username || '').trim().toLowerCase();
+                if (!normUser || !password) {
+                    throw new Error('กรุณากรอก Username และ Password');
+                }
+                const enc = new TextEncoder();
+                const baseKey = await window.crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(`${normUser}\0${password}`),
+                    'PBKDF2',
+                    false,
+                    ['deriveKey']
+                );
+                return window.crypto.subtle.deriveKey(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBytes,
+                        iterations,
+                        hash: 'SHA-256'
+                    },
+                    baseKey,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt', 'decrypt']
+                );
+            }
+
+            async function encryptVault(payloadObj, username, password) {
+                ensureWebCrypto();
+                const salt = window.crypto.getRandomValues(new Uint8Array(16));
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const key = await deriveVaultKey(username, password, salt, VAULT_ITERATIONS);
+                const plaintext = new TextEncoder().encode(JSON.stringify(payloadObj));
+                const ctBuf = await window.crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv },
+                    key,
+                    plaintext
+                );
+                return {
+                    v: 1,
+                    iter: VAULT_ITERATIONS,
+                    salt: bytesToBase64(salt),
+                    iv: bytesToBase64(iv),
+                    ct: bytesToBase64(new Uint8Array(ctBuf))
+                };
+            }
+
+            async function decryptVault(vault, username, password) {
+                ensureWebCrypto();
+                if (!vault || !vault.salt || !vault.iv || !vault.ct) {
+                    throw new Error('ข้อมูล Vault ไม่สมบูรณ์');
+                }
+                try {
+                    const salt = base64ToBytes(vault.salt);
+                    const iv = base64ToBytes(vault.iv);
+                    const ct = base64ToBytes(vault.ct);
+                    const key = await deriveVaultKey(username, password, salt, vault.iter || VAULT_ITERATIONS);
+                    const ptBuf = await window.crypto.subtle.decrypt(
+                        { name: 'AES-GCM', iv },
+                        key,
+                        ct
+                    );
+                    const decoded = JSON.parse(new TextDecoder().decode(ptBuf));
+                    if (!decoded || !decoded.owner || !decoded.repo || !decoded.token) {
+                        throw new Error('ข้อมูลที่ถอดรหัสไม่ครบถ้วน');
+                    }
+                    return decoded;
+                } catch {
+                    throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                }
+            }
+
+            function formatVaultSnippet(vault) {
+                return `/* ADMIN_VAULT_START */\n            const ADMIN_VAULT = ${JSON.stringify(vault)};\n            /* ADMIN_VAULT_END */`;
+            }
+
+            function loadLocalVault() {
+                try {
+                    const v = JSON.parse(localStorage.getItem(STORAGE_VAULT_KEY) || 'null');
+                    return v && v.ct ? v : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            function saveLocalVault(vault) {
+                localStorage.setItem(STORAGE_VAULT_KEY, JSON.stringify(vault));
+            }
+
+            function clearLocalVault() {
+                localStorage.removeItem(STORAGE_VAULT_KEY);
+            }
+
+            function getActiveVault() {
+                return ADMIN_VAULT || loadLocalVault();
+            }
+
+            function loadSession() {
+                try {
+                    const s = JSON.parse(sessionStorage.getItem(SESSION_AUTH_KEY) || 'null');
+                    return s && s.cfg && s.cfg.token ? s : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            function saveSession(sessionObj) {
+                sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(sessionObj));
+            }
+
+            function clearSession() {
+                sessionStorage.removeItem(SESSION_AUTH_KEY);
+            }
+
+            async function testGitHubConnection(cfg) {
+                const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`, {
+                    headers: {
+                        Authorization: `Bearer ${cfg.token}`,
+                        Accept: 'application/vnd.github+json',
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                });
+                const rawText = await res.text();
+                let data = {};
+                try { data = rawText ? JSON.parse(rawText) : {}; } catch { }
+                if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+                if (data.private) {
+                    throw new Error('เชื่อมต่อสำเร็จ แต่ Repo นี้เป็น Private — คนอื่นจะดาวน์โหลดไม่ได้จนกว่าจะเปลี่ยนเป็น Public');
+                }
+                return data.full_name;
+            }
+
+            async function pushVaultToGitHubIndex(cfg, vault) {
+                const res = await fetch(
+                    `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/index.html?ref=${encodeURIComponent(cfg.branch)}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${cfg.token}`,
+                            Accept: 'application/vnd.github+json',
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        }
+                    }
+                );
+                const rawText = await res.text();
+                let data = {};
+                try { data = rawText ? JSON.parse(rawText) : {}; } catch { }
+                if (!res.ok) {
+                    throw new Error(data.message || `HTTP ${res.status} (ไม่พบ index.html บน branch ${cfg.branch})`);
+                }
+                const html = new TextDecoder().decode(base64ToBytes(String(data.content || '').replace(/\s+/g, '')));
+                if (!html.includes('/* ADMIN_VAULT_START */') || !html.includes('/* ADMIN_VAULT_END */')) {
+                    throw new Error('ไฟล์ index.html บน GitHub ยังเป็นเวอร์ชันเก่า กรุณาอัปโหลดไฟล์ index.html เวอร์ชันนี้ขึ้น GitHub ก่อน หรือคัดลอกโค้ดไปวางเอง');
+                }
+                const replacement = formatVaultSnippet(vault);
+                const updatedHtml = html.replace(/\/\* ADMIN_VAULT_START \*\/[\s\S]*?\/\* ADMIN_VAULT_END \*\//, () => replacement);
+                const updatedBase64 = bytesToBase64(new TextEncoder().encode(updatedHtml));
+                await githubPutFile(cfg, 'index.html', updatedBase64, 'Update encrypted Admin Vault', data.sha);
+            }
+
             // -------------------- Route Check --------------------
             const params = new URLSearchParams(window.location.search);
             const sharedFile = params.get('f');
@@ -777,7 +1152,7 @@
             if (sharedFile) {
                 initDownloadMode(params);
             } else {
-                initUploadMode();
+                initAdminApp();
             }
 
             // ==================== DOWNLOAD MODE ====================
@@ -968,30 +1343,23 @@
                 });
             }
 
-            // ==================== UPLOAD MODE ====================
-            function initUploadMode() {
-                $('uploadView').classList.remove('hidden');
-
+            // ==================== ADMIN APP & UPLOAD MODE ====================
+            function initAdminApp() {
                 let queuedFiles = [];
+                let activeSession = loadSession();
+                let lastGeneratedVault = null;
 
-                function loadConfig() {
-                    const auto = detectGithubPagesRepo();
-                    let saved = {};
-                    try { saved = JSON.parse(localStorage.getItem(STORAGE_CFG_KEY) || '{}'); } catch { }
+                function readSetupConfig() {
                     return {
-                        owner: saved.owner || auto.owner || '',
-                        repo: saved.repo || auto.repo || '',
-                        branch: saved.branch || 'main',
-                        folder: saved.folder || 'uploads',
-                        token: saved.token || ''
+                        owner: $('setupOwner').value.trim(),
+                        repo: $('setupRepo').value.trim(),
+                        branch: $('setupBranch').value.trim() || 'main',
+                        folder: ($('setupFolder').value.trim() || 'uploads').replace(/^\/+|\/+$/g, ''),
+                        token: $('setupToken').value.trim()
                     };
                 }
 
-                function saveConfig(cfg) {
-                    localStorage.setItem(STORAGE_CFG_KEY, JSON.stringify(cfg));
-                }
-
-                function readConfigFromInputs() {
+                function readSettingsConfig() {
                     return {
                         owner: $('cfgOwner').value.trim(),
                         repo: $('cfgRepo').value.trim(),
@@ -1001,86 +1369,300 @@
                     };
                 }
 
-                function syncConfigUI(collapseIfReady = false) {
-                    const cfg = loadConfig();
+                function validateRepoConfig(cfg) {
+                    return isSafeIdent(cfg.owner) && isSafeIdent(cfg.repo) && isSafeBranch(cfg.branch) && isSafePath(cfg.folder) && Boolean(cfg.token);
+                }
+
+                function syncAdminUI() {
+                    const cfg = activeSession?.cfg;
+                    if (!cfg) return;
                     $('cfgOwner').value = cfg.owner;
                     $('cfgRepo').value = cfg.repo;
                     $('cfgBranch').value = cfg.branch;
                     $('cfgFolder').value = cfg.folder;
                     $('cfgToken').value = cfg.token;
+                    $('cfgAdminUser').value = activeSession.adminUser || 'admin';
+                    $('cfgAdminPass').value = '';
+                    $('cfgAdminPassConfirm').value = '';
+                    $('configSummary').textContent = `ผู้ดูแล: ${activeSession.adminUser || 'admin'} · ปลายทาง: ${cfg.owner}/${cfg.repo} (branch: ${cfg.branch}, โฟลเดอร์: /${cfg.folder})`;
+                }
 
-                    const ready = Boolean(cfg.owner && cfg.repo && cfg.token);
-                    const badge = $('configBadge');
-                    const summary = $('configSummary');
+                function prefillSetupForm() {
+                    const auto = detectGithubPagesRepo();
+                    let legacy = {};
+                    try { legacy = JSON.parse(localStorage.getItem(LEGACY_CFG_KEY) || '{}'); } catch { }
+                    $('setupOwner').value = legacy.owner || auto.owner || '';
+                    $('setupRepo').value = legacy.repo || auto.repo || '';
+                    $('setupBranch').value = legacy.branch || 'main';
+                    $('setupFolder').value = legacy.folder || 'uploads';
+                    $('setupToken').value = legacy.token || '';
+                }
 
-                    if (ready) {
-                        badge.textContent = 'พร้อมใช้งาน';
-                        badge.className = 'badge badge-ok';
-                        summary.textContent = `ปลายทาง: ${cfg.owner}/${cfg.repo} (branch: ${cfg.branch}, โฟลเดอร์: /${cfg.folder})`;
-                        if (collapseIfReady) {
-                            $('configForm').classList.add('hidden');
-                            summary.classList.remove('hidden');
-                        }
+                function renderAppState() {
+                    $('adminSetupView').classList.add('hidden');
+                    $('adminLoginView').classList.add('hidden');
+                    $('uploadView').classList.add('hidden');
+
+                    activeSession = activeSession || loadSession();
+
+                    if (activeSession && activeSession.cfg && activeSession.cfg.token) {
+                        $('uploadView').classList.remove('hidden');
+                        $('headerSubtitle').textContent = 'โหมดผู้ดูแลระบบ · อัปโหลดและจัดการไฟล์บน GitHub';
+                        $('configForm').classList.add('hidden');
+                        $('configVaultBox').classList.add('hidden');
+                        hideAlert($('configAlert'));
+                        hideAlert($('configPushAlert'));
+                        syncAdminUI();
+                        renderHistory();
+                    } else if (getActiveVault()) {
+                        $('adminLoginView').classList.remove('hidden');
+                        $('headerSubtitle').textContent = 'กรุณาเข้าสู่ระบบผู้ดูแลเพื่ออัปโหลดและจัดการไฟล์';
+                        $('localVaultResetRow').classList.toggle('hidden', Boolean(ADMIN_VAULT) || !loadLocalVault());
+                        hideAlert($('loginAlert'));
                     } else {
-                        badge.textContent = 'ยังไม่ตั้งค่า';
-                        badge.className = 'badge badge-warn';
-                        $('configForm').classList.remove('hidden');
-                        summary.classList.add('hidden');
+                        $('adminSetupView').classList.remove('hidden');
+                        $('headerSubtitle').textContent = 'ตั้งค่าบัญชีผู้ดูแล (Admin) และเชื่อมต่อ GitHub Repository';
+                        prefillSetupForm();
                     }
                 }
 
-                syncConfigUI(true);
-
-                $('btnToggleConfig').addEventListener('click', () => {
-                    const hidden = $('configForm').classList.toggle('hidden');
-                    $('configSummary').classList.toggle('hidden', !hidden);
-                });
-
-                $('btnSaveConfig').addEventListener('click', () => {
-                    const cfg = readConfigFromInputs();
-                    if (!isSafeIdent(cfg.owner) || !isSafeIdent(cfg.repo) || !isSafeBranch(cfg.branch) || !cfg.token) {
-                        showAlert($('configAlert'), 'กรุณากรอก Username, ชื่อ Repo, Branch และ Token ให้ถูกต้องครบถ้วน', 'error');
+                // -------------------- Login Handlers --------------------
+                $('loginForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    hideAlert($('loginAlert'));
+                    const vault = getActiveVault();
+                    if (!vault) {
+                        renderAppState();
                         return;
                     }
-                    saveConfig(cfg);
-                    showAlert($('configAlert'), 'บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
-                    syncConfigUI(false);
+                    const username = $('loginUser').value.trim();
+                    const password = $('loginPass').value;
+                    if (!username || !password) {
+                        showAlert($('loginAlert'), 'กรุณากรอก Username และ Password', 'error');
+                        return;
+                    }
+                    const btn = $('btnLogin');
+                    btn.disabled = true;
+                    btn.textContent = '⏳ กำลังตรวจสอบ...';
+                    try {
+                        const cfg = await decryptVault(vault, username, password);
+                        activeSession = { adminUser: username.toLowerCase(), cfg };
+                        saveSession(activeSession);
+                        $('loginPass').value = '';
+                        renderAppState();
+                    } catch (err) {
+                        showAlert($('loginAlert'), err.message, 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = '🔓 เข้าสู่ระบบ';
+                    }
                 });
 
-                $('btnClearConfig').addEventListener('click', () => {
-                    localStorage.removeItem(STORAGE_CFG_KEY);
-                    syncConfigUI(false);
-                    showAlert($('configAlert'), 'ล้างการตั้งค่าและ Token ออกจากเครื่องแล้ว', 'info');
+                $('btnResetLocalVault').addEventListener('click', () => {
+                    if (!confirm('ต้องการล้าง Admin Vault ที่บันทึกไว้ในเครื่องนี้เพื่อตั้งค่าใหม่หรือไม่?')) return;
+                    clearLocalVault();
+                    clearSession();
+                    activeSession = null;
+                    renderAppState();
+                });
+
+                // -------------------- First-Time Setup Handlers --------------------
+                $('btnSetupTestGitHub').addEventListener('click', async () => {
+                    const cfg = readSetupConfig();
+                    if (!validateRepoConfig(cfg)) {
+                        showAlert($('setupAlert'), 'กรุณากรอกข้อมูล GitHub Repository และ Token ให้ถูกต้องครบถ้วน', 'error');
+                        return;
+                    }
+                    showAlert($('setupAlert'), 'กำลังทดสอบการเชื่อมต่อกับ GitHub...', 'info');
+                    try {
+                        const fullName = await testGitHubConnection(cfg);
+                        showAlert($('setupAlert'), `เชื่อมต่อสำเร็จกับ ${fullName} (Public) พร้อมสร้าง Admin Login แล้ว!`, 'success');
+                    } catch (err) {
+                        showAlert($('setupAlert'), `เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
+                    }
+                });
+
+                $('btnSetupCreateVault').addEventListener('click', async () => {
+                    hideAlert($('setupAlert'));
+                    hideAlert($('setupPushAlert'));
+                    const adminUser = $('setupAdminUser').value.trim();
+                    const adminPass = $('setupAdminPass').value;
+                    const adminPassConfirm = $('setupAdminPassConfirm').value;
+                    const cfg = readSetupConfig();
+
+                    if (!adminUser) {
+                        showAlert($('setupAlert'), 'กรุณากรอกชื่อผู้ใช้ Admin', 'error');
+                        return;
+                    }
+                    if (adminPass.length < 8) {
+                        showAlert($('setupAlert'), 'รหัสผ่าน Admin ต้องมีความยาวอย่างน้อย 8 ตัวอักษร', 'error');
+                        return;
+                    }
+                    if (adminPass !== adminPassConfirm) {
+                        showAlert($('setupAlert'), 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน', 'error');
+                        return;
+                    }
+                    if (!validateRepoConfig(cfg)) {
+                        showAlert($('setupAlert'), 'กรุณากรอกข้อมูล GitHub Username, Repo, Branch, โฟลเดอร์ และ Token ให้ถูกต้องครบถ้วน', 'error');
+                        return;
+                    }
+
+                    const btn = $('btnSetupCreateVault');
+                    btn.disabled = true;
+                    btn.textContent = '⏳ กำลังทดสอบและเข้ารหัส...';
+                    try {
+                        await testGitHubConnection(cfg);
+                        const vault = await encryptVault(cfg, adminUser, adminPass);
+                        lastGeneratedVault = vault;
+                        saveLocalVault(vault);
+                        localStorage.removeItem(LEGACY_CFG_KEY);
+
+                        activeSession = { adminUser: adminUser.toLowerCase(), cfg };
+                        saveSession(activeSession);
+
+                        $('setupVaultCode').value = formatVaultSnippet(vault);
+                        $('setupResultBox').classList.remove('hidden');
+                        showAlert($('setupAlert'), 'สร้าง Admin Login และเข้ารหัส Vault สำเร็จแล้ว!', 'success');
+                    } catch (err) {
+                        showAlert($('setupAlert'), `สร้างไม่สำเร็จ: ${err.message}`, 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = '🔐 เข้ารหัสและสร้าง Admin Login';
+                    }
+                });
+
+                $('btnCopySetupVault').addEventListener('click', (e) => {
+                    copyText($('setupVaultCode').value, e.currentTarget);
+                });
+
+                $('btnPushSetupVault').addEventListener('click', async () => {
+                    if (!lastGeneratedVault || !activeSession?.cfg) return;
+                    const btn = $('btnPushSetupVault');
+                    btn.disabled = true;
+                    showAlert($('setupPushAlert'), 'กำลังอัปเดต ADMIN_VAULT ลงไฟล์ index.html บน GitHub...', 'info');
+                    try {
+                        await pushVaultToGitHubIndex(activeSession.cfg, lastGeneratedVault);
+                        showAlert($('setupPushAlert'), 'อัปเดต index.html บน GitHub สำเร็จแล้ว! รอ GitHub Pages build สักครู่ก็ล็อกอินได้จากทุกเครื่อง', 'success');
+                    } catch (err) {
+                        showAlert($('setupPushAlert'), `อัปเดตไม่สำเร็จ: ${err.message}`, 'error');
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+
+                $('btnEnterAdminAfterSetup').addEventListener('click', () => {
+                    $('setupAdminPass').value = '';
+                    $('setupAdminPassConfirm').value = '';
+                    $('setupToken').value = '';
+                    $('setupResultBox').classList.add('hidden');
+                    renderAppState();
+                });
+
+                // -------------------- Admin Settings & Logout --------------------
+                $('btnToggleConfig').addEventListener('click', () => {
+                    $('configForm').classList.toggle('hidden');
+                });
+
+                $('btnLogout').addEventListener('click', () => {
+                    activeSession = null;
+                    lastGeneratedVault = null;
+                    clearSession();
+                    queuedFiles = [];
+                    renderQueue();
+                    $('cfgToken').value = '';
+                    $('cfgAdminPass').value = '';
+                    $('cfgAdminPassConfirm').value = '';
+                    $('loginPass').value = '';
+                    $('configForm').classList.add('hidden');
+                    $('configVaultBox').classList.add('hidden');
+                    renderAppState();
                 });
 
                 $('btnTestConfig').addEventListener('click', async () => {
-                    const cfg = readConfigFromInputs();
-                    if (!cfg.owner || !cfg.repo || !cfg.token) {
-                        showAlert($('configAlert'), 'กรุณากรอก Username, Repo และ Token ก่อนทดสอบ', 'error');
+                    const cfg = readSettingsConfig();
+                    if (!validateRepoConfig(cfg)) {
+                        showAlert($('configAlert'), 'กรุณากรอก Username, Repo, Branch, โฟลเดอร์ และ Token ให้ถูกต้องครบถ้วน', 'error');
                         return;
                     }
                     showAlert($('configAlert'), 'กำลังทดสอบการเชื่อมต่อกับ GitHub...', 'info');
                     try {
-                        const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}`, {
-                            headers: {
-                                Authorization: `Bearer ${cfg.token}`,
-                                Accept: 'application/vnd.github+json',
-                                'X-GitHub-Api-Version': '2022-11-28'
-                            }
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
-                        if (data.private) {
-                            showAlert($('configAlert'), 'เชื่อมต่อสำเร็จ! แต่ Repo นี้เป็น Private — คนอื่นจะดาวน์โหลดไม่ได้จนกว่าจะเปลี่ยนเป็น Public', 'error');
-                        } else {
-                            saveConfig(cfg);
-                            syncConfigUI(false);
-                            showAlert($('configAlert'), `เชื่อมต่อสำเร็จกับ ${data.full_name} (Public) พร้อมอัปโหลดไฟล์แล้ว!`, 'success');
-                        }
+                        const fullName = await testGitHubConnection(cfg);
+                        showAlert($('configAlert'), `เชื่อมต่อสำเร็จกับ ${fullName} (Public) พร้อมอัปโหลดไฟล์แล้ว!`, 'success');
                     } catch (err) {
                         showAlert($('configAlert'), `เชื่อมต่อไม่สำเร็จ: ${err.message}`, 'error');
                     }
                 });
+
+                $('btnSaveVault').addEventListener('click', async () => {
+                    hideAlert($('configAlert'));
+                    hideAlert($('configPushAlert'));
+                    const cfg = readSettingsConfig();
+                    const adminUser = $('cfgAdminUser').value.trim();
+                    const adminPass = $('cfgAdminPass').value;
+                    const adminPassConfirm = $('cfgAdminPassConfirm').value;
+
+                    if (!validateRepoConfig(cfg)) {
+                        showAlert($('configAlert'), 'กรุณากรอกข้อมูล GitHub Repository และ Token ให้ถูกต้องครบถ้วน', 'error');
+                        return;
+                    }
+                    if (!adminUser) {
+                        showAlert($('configAlert'), 'กรุณากรอกชื่อผู้ใช้ Admin', 'error');
+                        return;
+                    }
+                    if (adminPass.length < 8) {
+                        showAlert($('configAlert'), 'กรุณากรอกรหัสผ่านอย่างน้อย 8 ตัวอักษรเพื่อใช้เข้ารหัส Vault ใหม่', 'error');
+                        return;
+                    }
+                    if (adminPass !== adminPassConfirm) {
+                        showAlert($('configAlert'), 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน', 'error');
+                        return;
+                    }
+
+                    const btn = $('btnSaveVault');
+                    btn.disabled = true;
+                    btn.textContent = '⏳ กำลังเข้ารหัส...';
+                    try {
+                        await testGitHubConnection(cfg);
+                        const vault = await encryptVault(cfg, adminUser, adminPass);
+                        lastGeneratedVault = vault;
+                        saveLocalVault(vault);
+                        localStorage.removeItem(LEGACY_CFG_KEY);
+
+                        activeSession = { adminUser: adminUser.toLowerCase(), cfg };
+                        saveSession(activeSession);
+                        syncAdminUI();
+
+                        $('configVaultCode').value = formatVaultSnippet(vault);
+                        $('configVaultBox').classList.remove('hidden');
+                        showAlert($('configAlert'), 'บันทึกและเข้ารหัส Vault ใหม่แล้ว! หากใช้ข้ามเครื่องอย่าลืมกด "อัปเดตขึ้น index.html บน GitHub" ด้านล่าง', 'success');
+                    } catch (err) {
+                        showAlert($('configAlert'), `บันทึกไม่สำเร็จ: ${err.message}`, 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = '🔐 บันทึกและเข้ารหัส Vault ใหม่';
+                    }
+                });
+
+                $('btnCopyConfigVault').addEventListener('click', (e) => {
+                    copyText($('configVaultCode').value, e.currentTarget);
+                });
+
+                $('btnPushConfigVault').addEventListener('click', async () => {
+                    if (!lastGeneratedVault || !activeSession?.cfg) return;
+                    const btn = $('btnPushConfigVault');
+                    btn.disabled = true;
+                    showAlert($('configPushAlert'), 'กำลังอัปเดต ADMIN_VAULT ลงไฟล์ index.html บน GitHub...', 'info');
+                    try {
+                        await pushVaultToGitHubIndex(activeSession.cfg, lastGeneratedVault);
+                        showAlert($('configPushAlert'), 'อัปเดต index.html บน GitHub สำเร็จแล้ว!', 'success');
+                    } catch (err) {
+                        showAlert($('configPushAlert'), `อัปเดตไม่สำเร็จ: ${err.message}`, 'error');
+                    } finally {
+                        btn.disabled = false;
+                    }
+                });
+
+                renderAppState();
 
                 // -------------------- File Selection --------------------
                 const dropzone = $('dropzone');
@@ -1168,10 +1750,10 @@
 
                 // -------------------- Upload to GitHub --------------------
                 $('btnStartUpload').addEventListener('click', async () => {
-                    const cfg = loadConfig();
-                    if (!cfg.owner || !cfg.repo || !cfg.token) {
-                        showAlert($('uploadAlert'), 'กรุณาตั้งค่า GitHub Repository และบันทึก Token ด้านบนก่อนอัปโหลด', 'error');
-                        $('configForm').classList.remove('hidden');
+                    const cfg = activeSession?.cfg;
+                    if (!cfg || !cfg.owner || !cfg.repo || !cfg.token) {
+                        showAlert($('uploadAlert'), 'เซสชันผู้ดูแลหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'error');
+                        renderAppState();
                         return;
                     }
                     if (!queuedFiles.length) return;
@@ -1321,9 +1903,10 @@
 
                 async function deleteFromGitHub(entry, index) {
                     if (!confirm(`ต้องการลบไฟล์ "${entry.name}" ออกจาก GitHub Repository จริงหรือไม่?`)) return;
-                    const cfg = loadConfig();
-                    if (!cfg.token) {
-                        showAlert($('uploadAlert'), 'กรุณาใส่ Token ในหน้าตั้งค่าก่อนลบไฟล์บน GitHub', 'error');
+                    const cfg = activeSession?.cfg;
+                    if (!cfg || !cfg.token) {
+                        showAlert($('uploadAlert'), 'เซสชันผู้ดูแลหมดอายุ กรุณาเข้าสู่ระบบใหม่ก่อนลบไฟล์บน GitHub', 'error');
+                        renderAppState();
                         return;
                     }
                     try {
